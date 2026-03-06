@@ -301,9 +301,9 @@ lim(cost) → 0 as traffic → moderate
 
 ### 피드백 루프
 ```
-Implementation → Test Agent → Refactoring Agent → Test Agent
-                                                      ↓
-                                              Documentation Agent
+Implementation(Feature Agent) → Test Agent → Refactoring Agent → Test Agent
+                                                                     ↓
+                                                            Documentation Agent
 ```
 
 ---
@@ -464,13 +464,14 @@ Expected Output:
 agents/
 ├── design-architecture.md
 ├── design-ui-ux.md
+├── feature-development.md
 ├── test.md
 ├── code-quality.md
 ├── cost-optimization.md
 ├── documentation.md
 ├── security.md
 ├── deployment-automation.md
-├── vcs-history-management.md
+├── vcs.md
 └── refactoring.md
 ```
 
