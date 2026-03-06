@@ -1,0 +1,394 @@
+@import 'tailwindcss';
+
+/* Deep Sea Musing Theme - Light Mode (Default) */
+:root {
+  /* Backgrounds */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-tertiary: #e2e8f0;
+
+  /* Text Colors */
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+
+  /* Accent Colors - Ocean Blue */
+  --color-primary: #0c8bc9;
+  --color-primary-light: #14a2e0;
+  --color-primary-lighter: #4dbff0;
+
+  /* Borders & Dividers */
+  --border-color: #cbd5e1;
+  --border-color-light: #e2e8f0;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Deep Sea Musing Theme - Dark Mode */
+.dark {
+  /* Backgrounds */
+  --bg-primary: #020715;
+  --bg-secondary: #031732;
+  --bg-tertiary: #0a1f42;
+  
+  /* Text Colors */
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Accent Colors - Ocean Blue */
+  --color-primary: #14a2e0;
+  --color-primary-light: #4dbff0;
+  --color-primary-lighter: #7dd0f5;
+
+  /* Borders & Dividers */
+  --border-color: #1e293b;
+  --border-color-light: #334155;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+}
+
+@layer base {
+  body {
+    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    line-height: 1.6;
+    font-size: 16px;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  /* Deep ocean gradient for dark mode */
+  .dark body {
+    background: linear-gradient(
+      180deg,
+      #020715 0%,
+      #031732 50%,
+      #020715 100%
+    );
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--text-primary);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+  }
+
+  h2 {
+    font-size: 2rem;
+    font-weight: 600;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  a:hover {
+    color: var(--color-primary-light);
+  }
+}
+
+@layer utilities {
+  /* Card Styles */
+  .card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-primary);
+  }
+
+  /* Input Styles */
+  .input-container {
+    position: relative;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+  }
+
+  .input-container:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+  }
+
+  .text-input {
+    font-family: var(--font-inter), sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background: transparent;
+    border: none;
+    outline: none;
+    width: 100%;
+    padding-right: 4rem;
+    max-height: 200px;
+    overflow-y: auto;
+    min-height: 24px;
+  }
+
+  .text-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+  }
+
+  .text-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .submit-btn {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.25rem;
+    color: white;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .submit-btn:hover:not(:disabled) {
+    background: var(--color-primary-light);
+    transform: scale(1.05);
+    box-shadow: var(--shadow-md);
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Chat Session Styles */
+  .chat-container {
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  .question-box {
+    border-left: 3px solid var(--color-primary);
+    padding-left: 1.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    background: linear-gradient(
+      to right,
+      var(--bg-tertiary),
+      transparent
+    );
+    border-radius: 0 8px 8px 0;
+  }
+
+  .loading-spinner {
+    font-size: 1.5rem;
+    animation: spin 1.5s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Typing Indicator */
+  .typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .typing-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out;
+  }
+
+  .typing-dot:nth-child(1) {
+    animation-delay: 0s;
+  }
+
+  .typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes bounce {
+    0%, 60%, 100% {
+      transform: translateY(0);
+    }
+    30% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .error-box {
+    border: 1px solid var(--color-primary);
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .response-box {
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .close-btn {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-primary);
+    background: transparent;
+    border: 1px solid var(--color-primary);
+    padding: 0.5rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 44px;
+  }
+
+  .close-btn:hover {
+    background: var(--color-primary);
+    color: white;
+  }
+
+  /* Animations */
+  .fade-in {
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  /* Category Tree */
+  .category-tree {
+    padding-left: 1rem;
+    border-left: 1px solid var(--border-color-light);
+  }
+
+  .category-item {
+    padding: 0.5rem 0;
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+  }
+
+  .category-item:hover {
+    color: var(--color-primary);
+  }
+
+  .category-item.active {
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  .card,
+  .input-container,
+  .response-box,
+  .error-box {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .submit-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 1.125rem;
+  }
+}
