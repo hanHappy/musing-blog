@@ -461,18 +461,32 @@ Expected Output:
 ## 에이전트 디렉토리 구조
 
 ```
-agents/
-├── design-architecture.md
-├── design-ui-ux.md
-├── feature-development.md
-├── test.md
-├── code-quality.md
-├── cost-optimization.md
-├── documentation.md
-├── security.md
-├── deployment-automation.md
-├── vcs.md
-└── refactoring.md
+.claude/
+├── agents/
+│   ├── design-architecture.md
+│   ├── design-ui-ux.md
+│   ├── feature-development.md
+│   ├── test.md
+│   ├── code-quality.md
+│   ├── cost-optimization.md
+│   ├── documentation.md
+│   ├── security.md
+│   ├── deployment-automation.md
+│   ├── vcs.md
+│   └── refactoring.md
+└── skills/
+    ├── api-security-patterns/
+    ├── doc-templates/
+    ├── eslint-prettier-config/
+    ├── find-skills/
+    ├── git-conventions/
+    ├── refactoring-patterns/
+    ├── rls-policies/
+    ├── test-config/
+    ├── test-templates/
+    ├── vercel-deployment/
+    ├── vercel-react-best-practices/
+    └── web-design-guidelines/
 ```
 
 ---
