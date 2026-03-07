@@ -340,8 +340,26 @@
 
   /* Category Tree */
   .category-tree {
+    position: relative;
     padding-left: 1rem;
-    border-left: 1px solid var(--border-color-light);
+  }
+
+  /* 1레벨 세로선: 2레벨 토글 중앙 가리킴 */
+  .category-tree::before {
+    content: '';
+    position: absolute;
+    left: 0.75rem;
+    top: 0;
+    bottom: 0.5rem;
+    width: 1px;
+    background-color: var(--border-color-light);
+  }
+
+  /* 2레벨 이상 세로선: 각 하위 레벨 토글 중앙 가리킴 */
+  .category-tree .category-tree::before {
+    left: 1.75rem;
+    width: 1px;
+    background-color: var(--border-color-light);
   }
 
   .category-item {

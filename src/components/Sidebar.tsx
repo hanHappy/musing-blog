@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
 import ProfileCard from './ProfileCard';
 
 interface Category {
@@ -19,22 +22,49 @@ function CategoryItem({
   category: Category;
   level?: number;
 }) {
-  const paddingClass = level === 0 ? 'pl-0' : level === 1 ? 'pl-4' : 'pl-8';
+  const [isOpen, setIsOpen] = useState(true);
+  const hasChildren = category.children && category.children.length > 0;
 
   return (
-    <div className={paddingClass}>
-      <Link
-        href={`/category/${category.slug}`}
-        className="category-item group flex items-center justify-between py-2 text-sm transition-colors"
-      >
-        <span className="flex-1">{category.name}</span>
-        {category.count && (
-          <span className="text-xs text-[var(--text-muted)]">
-            {category.count}
-          </span>
+    <div className="relative">
+      <div className="flex items-center gap-1" style={{ paddingLeft: `${level * 1}rem` }}>
+        {hasChildren && (
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+            aria-label={isOpen ? 'Collapse category' : 'Expand category'}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className={`transition-transform ${isOpen ? 'rotate-90' : ''}`}
+            >
+              <path
+                d="M4.5 2L8.5 6L4.5 10"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
         )}
-      </Link>
-      {category.children && category.children.length > 0 && (
+        <Link
+          href={`/category/${category.slug}`}
+          className={`category-item group flex flex-1 items-center justify-between py-2 text-sm transition-colors ${!hasChildren ? 'ml-7' : ''}`}
+        >
+          <span className="flex-1">{category.name}</span>
+          {category.count !== undefined && (
+            <span className="text-xs text-[var(--text-muted)]">
+              {category.count}
+            </span>
+          )}
+        </Link>
+      </div>
+      {hasChildren && isOpen && category.children && (
         <div className="category-tree">
           {category.children.map((child) => (
             <CategoryItem key={child.slug} category={child} level={level + 1} />
