@@ -1,9 +1,15 @@
 'use client';
 
 // Posts management page
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import type { PostWithCategory } from '@/types/database';
+import type { PostWithCategory, Category } from '@/types/database';
+import {
+  buildCategoryMap,
+  getCategoryPath,
+  getCachedCategories,
+  setCachedCategories,
+} from '@/lib/utils/category';
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('ko-KR', {
@@ -13,27 +19,75 @@ function formatDate(dateString: string): string {
   });
 }
 
+// 카테고리 트리 평탄화
+interface CategoryWithChildren extends Category {
+  children?: CategoryWithChildren[];
+}
+
+function flattenCategories(tree: CategoryWithChildren[]): Category[] {
+  const result: Category[] = [];
+
+  function traverse(nodes: CategoryWithChildren[]) {
+    for (const node of nodes) {
+      const { children, ...category } = node;
+      result.push(category as Category);
+      if (children && children.length > 0) {
+        traverse(children);
+      }
+    }
+  }
+
+  traverse(tree);
+  return result;
+}
+
 export default function PostsPage() {
   const [posts, setPosts] = useState<PostWithCategory[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchPosts() {
+    async function fetchData() {
       try {
-        const res = await fetch('/api/posts');
-        if (res.ok) {
-          const data = await res.json();
-          setPosts(data);
+        // 캐시 조회
+        const cached = getCachedCategories();
+        if (cached) {
+          setCategories(cached);
+        }
+
+        // 병렬 fetch (posts + categories)
+        const [postsRes, categoriesRes] = await Promise.all([
+          fetch('/api/posts'),
+          cached ? null : fetch('/api/categories'),
+        ]);
+
+        if (postsRes.ok) {
+          const postsData = await postsRes.json();
+          setPosts(postsData);
+        }
+
+        if (categoriesRes?.ok) {
+          const categoriesData = await categoriesRes.json();
+          // 트리 구조를 평탄화
+          const flatCategories = flattenCategories(categoriesData);
+          setCategories(flatCategories);
+          setCachedCategories(flatCategories);
         }
       } catch (error) {
-        console.error('Error fetching posts:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchPosts();
+    fetchData();
   }, []);
+
+  // 카테고리 맵 생성
+  const categoryMap = useMemo(
+    () => buildCategoryMap(categories),
+    [categories]
+  );
 
   if (loading) {
     return (
@@ -112,12 +166,25 @@ export default function PostsPage() {
             >
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h2
-                    className="text-xl font-semibold"
-                    style={{ color: 'var(--text-primary)' }}
+                  <Link
+                    href={`/posts/${post.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
                   >
-                    {post.title}
-                  </h2>
+                    <h2
+                      className="text-xl font-semibold transition-colors group-hover:underline"
+                      style={{ color: 'var(--text-primary)' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = 'var(--color-primary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                      }}
+                    >
+                      {post.title}
+                    </h2>
+                  </Link>
 
                   {post.published ? (
                     <span
@@ -146,7 +213,9 @@ export default function PostsPage() {
                   className="flex items-center gap-4 text-sm"
                   style={{ color: 'var(--text-secondary)' }}
                 >
-                  <span>📁 {post.category?.name || 'Uncategorized'}</span>
+                  <span>
+                    📁 {getCategoryPath(post.category_id, categoryMap)}
+                  </span>
                   <span>📅 {formatDate(post.created_at)}</span>
                   <span>🔗 /{post.slug}</span>
                 </div>

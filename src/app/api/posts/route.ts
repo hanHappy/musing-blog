@@ -1,6 +1,7 @@
 // API route for posts CRUD operations
 import { createClient, isAdmin } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import type { CreatePostRequest, UpdatePostRequest } from '@/types/database';
 
 // GET /api/posts - Get all posts (public: only published, admin: all)
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json(data, {
     headers: {
-      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=86400',
     },
   });
 }
@@ -143,6 +144,14 @@ export async function PATCH(request: Request) {
     } catch (embedError) {
       console.error('Failed to regenerate embedding:', embedError);
     }
+  }
+
+  // 6. 온디맨드 재검증
+  try {
+    revalidatePath(`/posts/${data.slug}`);
+  } catch (revalidateError) {
+    console.error('Failed to revalidate path:', revalidateError);
+    // 재검증 실패해도 응답은 성공
   }
 
   return NextResponse.json(data);
