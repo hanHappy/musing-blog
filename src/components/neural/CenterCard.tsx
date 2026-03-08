@@ -1,0 +1,278 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { Send, Github, Rss, User, Minimize2, Maximize2 } from 'lucide-react';
+import { ChatBubble } from './ChatBubble';
+import type { ChatResponse } from '@/types/database';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  relatedSlugs?: string[];
+}
+
+interface CenterCardProps {
+  onSlugClick: (slug: string) => void;
+  onHighlightPosts: (slugs: string[]) => void;
+}
+
+export function CenterCard({ onSlugClick, onHighlightPosts }: CenterCardProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim() || isProcessing) return;
+
+    const userMessage: Message = {
+      role: 'user',
+      content: inputValue.trim(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue('');
+    setIsProcessing(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage.content,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response');
+      }
+
+      const data: ChatResponse = await response.json();
+
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: data.answer,
+        relatedSlugs: data.sources.map((s) => s.slug),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+
+      // Highlight related posts in the network
+      if (data.sources.length > 0) {
+        onHighlightPosts(data.sources.map((s) => s.slug));
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMessage: Message = {
+        role: 'assistant',
+        content:
+          '죄송합니다. 응답을 생성하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // 접힌 상태에서 input 클릭 시 펼치기
+  const handleInputFocus = () => {
+    if (isCollapsed) {
+      setIsCollapsed(false);
+    }
+  };
+
+  return (
+    <div
+      className={`fixed transition-all duration-500 ease-in-out ${
+        isCollapsed
+          ? 'bottom-8 left-1/2 -translate-x-1/2 w-[600px]'
+          : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%]'
+      }`}
+      style={{
+        fontFamily: 'var(--font-inter), sans-serif',
+      }}
+    >
+      {/* Card content */}
+      <div className={`relative flex flex-col neural-center-card ${
+        isCollapsed ? 'h-[80px] neural-card-collapsed' : 'h-[640px]'
+      }`}>
+          {/* Collapse/Expand button - only show when expanded */}
+          {!isCollapsed && (
+            <button
+              onClick={() => setIsCollapsed(true)}
+              className="absolute top-4 right-4 z-20 p-2 rounded-lg hover:bg-[rgba(0,255,200,0.1)] transition-colors"
+              aria-label="Minimize chat"
+            >
+              <Minimize2 size={20} style={{ color: 'var(--neural-accent)' }} />
+            </button>
+          )}
+
+        {/* Header - hide when collapsed */}
+        {!isCollapsed && (
+          <div className="p-8 pb-4">
+            <h1
+              className="text-3xl mb-2"
+              style={{
+                fontFamily: 'var(--font-space-grotesk), sans-serif',
+                color: 'var(--neural-text-primary)',
+                fontWeight: 600,
+              }}
+            >
+              muse.log
+            </h1>
+            <p
+              className="text-sm mb-4"
+              style={{
+                color: 'var(--neural-text-muted)',
+              }}
+            >
+              개발하고 투자하고 살아가는 사람의 기록
+            </p>
+
+            {/* Links */}
+            <div className="flex gap-4">
+              <a
+                href="https://github.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-sm hover:text-[var(--neural-accent)] transition-colors"
+                style={{ color: 'var(--neural-text-muted)' }}
+              >
+                <Github size={16} />
+                <span>GitHub</span>
+              </a>
+              <a
+                href="#about"
+                className="flex items-center gap-1.5 text-sm hover:text-[var(--neural-accent)] transition-colors"
+                style={{ color: 'var(--neural-text-muted)' }}
+              >
+                <User size={16} />
+                <span>About</span>
+              </a>
+              <a
+                href="#rss"
+                className="flex items-center gap-1.5 text-sm hover:text-[var(--neural-accent)] transition-colors"
+                style={{ color: 'var(--neural-text-muted)' }}
+              >
+                <Rss size={16} />
+                <span>RSS</span>
+              </a>
+            </div>
+          </div>
+        )}
+
+        {!isCollapsed && (
+          <div
+            className="mx-8 mb-4"
+            style={{
+              height: '1px',
+              background:
+                'linear-gradient(90deg, transparent, var(--neural-border-glow), transparent)',
+              opacity: 0.3,
+            }}
+          />
+        )}
+
+        {/* Chat History - hide when collapsed */}
+        {!isCollapsed && (
+          <div
+            ref={scrollRef}
+            className="flex-1 px-8 overflow-y-auto"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'var(--neural-border-glow) transparent',
+            }}
+          >
+            {messages.length === 0 ? (
+              <div className="h-full flex items-center justify-center">
+                <p
+                  className="text-center"
+                  style={{
+                    color: 'var(--neural-text-muted)',
+                  }}
+                >
+                  무엇이든 물어보세요 ✨
+                </p>
+              </div>
+            ) : (
+              messages.map((message, index) => (
+                <ChatBubble
+                  key={index}
+                  role={message.role}
+                  content={message.content}
+                  relatedSlugs={message.relatedSlugs}
+                  onSlugClick={onSlugClick}
+                />
+              ))
+            )}
+            {isProcessing && (
+              <div className="flex justify-start mb-4">
+                <div className="px-4 py-3 rounded-2xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)]">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 rounded-full bg-[#00FFC8] animate-pulse" />
+                    <div
+                      className="w-2 h-2 rounded-full bg-[#00FFC8] animate-pulse"
+                      style={{ animationDelay: '0.2s' }}
+                    />
+                    <div
+                      className="w-2 h-2 rounded-full bg-[#00FFC8] animate-pulse"
+                      style={{ animationDelay: '0.4s' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!isCollapsed && (
+          <div
+            className="mx-8 mb-4"
+            style={{
+              height: '1px',
+              background:
+                'linear-gradient(90deg, transparent, var(--neural-border-glow), transparent)',
+              opacity: 0.3,
+            }}
+          />
+        )}
+
+        {/* Input */}
+        <div className={isCollapsed ? 'p-4' : 'p-8 pt-0'}>
+          <form onSubmit={handleSubmit} className="relative">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onFocus={handleInputFocus}
+              placeholder="🔍 muse에게 무엇이든 물어보세요..."
+              disabled={isProcessing}
+              className="w-full px-4 py-3 pr-12 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] focus:border-[var(--neural-accent)] focus:outline-none transition-colors"
+              style={{
+                color: 'var(--neural-text-primary)',
+                fontSize: '14px',
+              }}
+            />
+            <button
+              type="submit"
+              disabled={isProcessing || !inputValue.trim()}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md hover:bg-[rgba(0,255,200,0.1)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <Send size={18} style={{ color: 'var(--neural-accent)' }} />
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}

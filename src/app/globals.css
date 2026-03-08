@@ -766,6 +766,13 @@
     opacity: 0.9;
   }
 
+  /* Disable rotation animation when collapsed */
+  .neural-card-collapsed::before,
+  .neural-card-collapsed::after {
+    animation-play-state: paused;
+    opacity: 0;
+  }
+
   @keyframes rotate-border {
     0% {
       --rotation-angle: 0deg;
