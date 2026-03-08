@@ -1,38 +1,34 @@
 /**
  * Server-side caching layer for Supabase queries
- * Uses Next.js unstable_cache for per-request and cross-request caching
+ * Uses React cache for per-request deduplication
  */
 
-import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
 import { createClient } from '@/lib/supabase-server';
-import { CACHE_DURATION } from '@/lib/constants';
 import type { Category } from '@/types/category';
 
 /**
- * Cached category tree fetch with 24-hour revalidation
- * Uses Next.js cache with tags for granular invalidation
+ * Cached category tree fetch with per-request deduplication
+ * Uses React cache to deduplicate multiple calls within the same request
+ *
+ * Note: This uses React cache (not Next.js unstable_cache) because
+ * we need to access cookies() in createClient(), which is not allowed
+ * inside unstable_cache. The ISR revalidation is handled at the page level.
  *
  * @returns All categories ordered by level and order
  */
-export const getCachedCategoryTree = unstable_cache(
-  async (): Promise<Category[]> => {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('level', { ascending: true })
-      .order('order', { ascending: true });
+export const getCachedCategoryTree = cache(async (): Promise<Category[]> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .order('level', { ascending: true })
+    .order('order', { ascending: true });
 
-    if (error) {
-      console.error('Failed to fetch categories:', error);
-      return [];
-    }
-
-    return data || [];
-  },
-  ['category-tree'],
-  {
-    revalidate: CACHE_DURATION.CATEGORY_TREE,
-    tags: ['categories'],
+  if (error) {
+    console.error('Failed to fetch categories:', error);
+    return [];
   }
-);
+
+  return data || [];
+});
