@@ -27,31 +27,42 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Deep Sea muse.log Theme - Dark Mode */
+/* Neural Network Theme - Dark Mode (Default) */
 .dark {
-  /* Backgrounds */
-  --bg-primary: #020715;
-  --bg-secondary: #031732;
-  --bg-tertiary: #0a1f42;
-  
+  /* Backgrounds - Neural Style */
+  --bg-primary: #080B10;
+  --bg-secondary: rgba(10, 14, 22, 0.85);
+  --bg-tertiary: rgba(20, 25, 35, 0.9);
+
   /* Text Colors */
-  --text-primary: #e2e8f0;
+  --text-primary: #F0F0F0;
   --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-muted: #6B7280;
 
-  /* Accent Colors - Ocean Blue */
-  --color-primary: #14a2e0;
-  --color-primary-light: #4dbff0;
-  --color-primary-lighter: #7dd0f5;
+  /* Accent Colors - Cyan Glow */
+  --color-primary: #00FFC8;
+  --color-primary-light: #4dffdd;
+  --color-primary-lighter: #7dfff0;
 
-  /* Borders & Dividers */
-  --border-color: #1e293b;
-  --border-color-light: #334155;
+  /* Borders & Dividers - Glow Effect */
+  --border-color: #00FFC840;
+  --border-color-light: #00FFC820;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+  /* Shadows - Neural Glow */
+  --shadow-sm: 0 0 10px rgba(0, 255, 200, 0.1);
+  --shadow-md: 0 0 20px rgba(0, 255, 200, 0.15);
+  --shadow-lg: 0 0 30px rgba(0, 255, 200, 0.2);
+
+  /* Neural Network Specific */
+  --neural-bg: #080B10;
+  --neural-card: rgba(10, 14, 22, 0.85);
+  --neural-border-glow: #00FFC8;
+  --neural-node-cat: #00FFC8;
+  --neural-node-sub: #A78BFA;
+  --neural-node-leaf: #FFFFFF;
+  --neural-text-primary: #F0F0F0;
+  --neural-text-muted: #6B7280;
+  --neural-accent: #00FFC8;
 }
 
 @layer base {
@@ -64,13 +75,13 @@
     transition: background 0.3s ease, color 0.3s ease;
   }
 
-  /* Deep ocean gradient for dark mode */
+  /* Neural network gradient for dark mode */
   .dark body {
     background: linear-gradient(
       180deg,
-      #020715 0%,
-      #031732 50%,
-      #020715 100%
+      #080B10 0%,
+      #0a0e16 50%,
+      #080B10 100%
     );
     background-attachment: fixed;
   }
@@ -221,15 +232,6 @@
   .loading-spinner {
     font-size: 1.5rem;
     animation: spin 1.5s linear infinite;
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
   }
 
   /* Typing Indicator */
@@ -702,6 +704,98 @@
       padding: 0.5rem;
     }
   }
+
+  /* Neural Network Styles */
+  .neural-bg {
+    background: var(--neural-bg);
+  }
+
+  /* Custom property for rotating border animation */
+  @property --rotation-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  .neural-center-card {
+    position: relative;
+    background: var(--neural-card);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    box-shadow:
+      0 0 20px rgba(0, 255, 200, 0.15),
+      inset 0 0 20px rgba(0, 255, 200, 0.05);
+    transition: all 0.3s ease;
+    z-index: 1;
+  }
+
+  /* Rotating border effect using ::before and ::after */
+  .neural-center-card::before,
+  .neural-center-card::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 16px;
+    background: conic-gradient(
+      from var(--rotation-angle),
+      transparent 0deg,
+      rgba(0, 255, 200, 0.8) 60deg,
+      rgba(77, 255, 221, 1) 90deg,
+      rgba(125, 255, 240, 1) 120deg,
+      rgba(77, 255, 221, 1) 150deg,
+      rgba(0, 255, 200, 0.8) 180deg,
+      transparent 240deg,
+      transparent 360deg
+    );
+    z-index: -1;
+    animation: rotate-border 4s linear infinite;
+    pointer-events: none;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    padding: 3px;
+  }
+
+  /* Blur effect for the ::before pseudo-element to create glow */
+  .neural-center-card::before {
+    filter: blur(12px);
+    opacity: 0.6;
+  }
+
+  /* Sharp border effect for ::after - no additional padding needed */
+  .neural-center-card::after {
+    opacity: 0.9;
+  }
+
+  @keyframes rotate-border {
+    0% {
+      --rotation-angle: 0deg;
+    }
+    100% {
+      --rotation-angle: 360deg;
+    }
+  }
+
+  .neural-glow {
+    box-shadow: 0 0 30px rgba(0, 255, 200, 0.3);
+  }
+
+  .neural-pulse {
+    animation: neuralPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes neuralPulse {
+    0%, 100% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  .neural-node-glow {
+    filter: drop-shadow(0 0 8px currentColor);
+  }
+
 }
 
 /* Responsive Design */
