@@ -8,6 +8,7 @@
 
 | 작업 유형 | 사용 Agent | 조건 |
 |-----------|-----------|------|
+| 아이디어 구체화, 요구사항 불명확한 경우 | `planner` | design-architecture 전 필수 |
 | 새 기능 추가, 데이터 모델 변경, API 설계 | `design-architecture` | 구현 전 필수 |
 | UI 페이지 추가, 레이아웃 변경 | `design-ui-ux` | Architecture 설계 후 |
 | DB 테이블, API 엔드포인트, 인증 추가 | `security` | 구현 전 필수 |

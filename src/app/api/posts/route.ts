@@ -97,8 +97,11 @@ export async function POST(request: Request) {
 
 // PATCH /api/posts - Update a post (admin only)
 export async function PATCH(request: Request) {
-  const admin = await isAdmin();
+  // TODO: Add rate limiting (Phase 2)
+  // TODO: Add Zod input validation (Phase 2)
 
+  // 1. Authentication check (MUST be first)
+  const admin = await isAdmin();
   if (!admin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -106,13 +109,22 @@ export async function PATCH(request: Request) {
   const supabase = await createClient();
   const body: UpdatePostRequest = await request.json();
 
-  const { id, ...updates } = body;
+  const { id, slug: _slug, ...updates } = body;
 
+  // 2. Validate required fields
   if (!id) {
     return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
   }
 
-  // Update post
+  // 3. Block slug modification (Security requirement)
+  if (_slug !== undefined) {
+    return NextResponse.json(
+      { error: 'Slug cannot be modified after creation' },
+      { status: 400 }
+    );
+  }
+
+  // 4. Update post
   const { data, error } = await supabase
     .from('posts')
     .update(updates)
@@ -124,7 +136,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Regenerate embedding if content changed and post is published
+  // 5. Regenerate embedding if content changed and post is published
   if ((updates.content || updates.title) && data.published) {
     try {
       await generateEmbedding(data.id, data.title, data.content);
@@ -136,24 +148,36 @@ export async function PATCH(request: Request) {
   return NextResponse.json(data);
 }
 
-// DELETE /api/posts?id=xxx - Delete a post (admin only)
+// DELETE /api/posts?id=xxx&slug=xxx - Delete a post (admin only)
 export async function DELETE(request: Request) {
-  const admin = await isAdmin();
+  // TODO: Add rate limiting (Phase 2)
 
+  // 1. Authentication check (MUST be first)
+  const admin = await isAdmin();
   if (!admin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
+  const slug = searchParams.get('slug');
 
-  if (!id) {
-    return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
+  // 2. Validate: either id or slug is required
+  if (!id && !slug) {
+    return NextResponse.json(
+      { error: 'Post ID or slug is required' },
+      { status: 400 }
+    );
   }
 
   const supabase = await createClient();
 
-  const { error } = await supabase.from('posts').delete().eq('id', id);
+  // 3. Delete by id or slug
+  const deleteQuery = id
+    ? supabase.from('posts').delete().eq('id', id)
+    : supabase.from('posts').delete().eq('slug', slug);
+
+  const { error } = await deleteQuery;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

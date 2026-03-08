@@ -163,7 +163,7 @@ export default function PostsPage() {
 
               <div className="flex items-center gap-2">
                 <Link
-                  href={`/admin/posts/${post.id}/edit`}
+                  href={`/admin/posts/${post.slug}/edit`}
                   className="px-4 py-2 rounded-lg transition-all"
                   style={{
                     color: 'var(--color-primary)',
@@ -202,7 +202,7 @@ export default function PostsPage() {
                         `Are you sure you want to delete "${post.title}"?`
                       )
                     ) {
-                      fetch(`/api/posts?id=${post.id}`, {
+                      fetch(`/api/posts?slug=${post.slug}`, {
                         method: 'DELETE',
                       }).then(() => {
                         window.location.reload();

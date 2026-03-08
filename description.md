@@ -742,7 +742,131 @@ match_threshold: 0.7   // 유사도 70% 미만은 무시
 
 ---
 
-## 5. 전체 데이터 흐름도
+## 5. Admin Posts Edit 기능 설계
+
+### 5.1 Edit 페이지 구조
+
+**URL 라우팅:**
+```
+/admin/posts/[slug]/edit
+```
+
+**파일 구조:**
+```
+src/app/admin/posts/[slug]/edit/
+├── page.tsx            # Server Component (인증, 데이터 페칭)
+└── EditPostForm.tsx    # Client Component (폼 처리)
+```
+
+**Server Component (page.tsx) 책임:**
+1. 관리자 인증 확인 (`isAdmin()`)
+2. Slug를 통해 포스트 조회
+3. 카테고리 목록 조회
+4. EditPostForm에 props 전달
+
+**Client Component (EditPostForm.tsx) 책임:**
+1. 폼 상태 관리 (title, content, excerpt, category_id, published)
+2. React MD Editor (마크다운 에디터) 통합
+3. PATCH 요청 처리
+
+### 5.2 API 엔드포인트 변경
+
+#### PATCH /api/posts - 포스트 수정 (관리자 전용)
+
+**Request:**
+```json
+{
+  "id": "uuid",
+  "title": "Updated Title",
+  "content": "Updated markdown content",
+  "excerpt": "Updated excerpt",
+  "category_id": "uuid or null",
+  "published": true
+}
+```
+
+**Response (200):**
+```json
+{
+  "id": "uuid",
+  "title": "Updated Title",
+  "slug": "original-slug",
+  "content": "Updated markdown content",
+  "excerpt": "Updated excerpt",
+  "category_id": "uuid",
+  "published": true,
+  "created_at": "2026-03-08T...",
+  "updated_at": "2026-03-08T...",
+  "author_id": "uuid"
+}
+```
+
+**보안 기능:**
+1. Slug 불변성: PATCH 요청에 slug가 포함되면 400 에러 반환
+2. 관리자만 접근: `isAdmin()` 체크로 401 에러 반환
+
+**임베딩 자동 재생성:**
+- content 또는 title이 변경되고 published=true인 경우
+- OpenAI Embedding API로 새 임베딩 생성
+- Upsert로 기존 임베딩 덮어쓰기
+
+#### DELETE /api/posts - 포스트 삭제 (관리자 전용)
+
+**URL 파라미터:**
+```
+DELETE /api/posts?slug=post-slug
+또는
+DELETE /api/posts?id=uuid
+```
+
+**보안 기능:**
+1. 관리자만 접근: `isAdmin()` 체크
+2. Slug 또는 ID 중 하나 필수 (둘 다 없으면 400 에러)
+3. ON DELETE CASCADE로 post_embeddings 자동 삭제
+
+### 5.3 주요 설계 결정
+
+**1. Slug 기반 라우팅**
+- SEO 친화적 URL: `/admin/posts/how-to-use-rag/edit`
+- ID 기반보다 사람이 읽기 쉬움
+- URL 변경 불가로 링크 무결성 보장
+
+**2. Server Component에서 데이터 페칭**
+```typescript
+// page.tsx (Server)
+const { data: post } = await supabase
+  .from('posts')
+  .select('*')
+  .eq('slug', slug)
+  .single();
+```
+
+**장점:**
+- 데이터베이스에 직접 접근 (API 레이어 불필요)
+- 보안: 클라이언트에 API 키 노출 안 됨
+- 성능: 서버에서 필터링
+
+**3. 마크다운 에디터**
+- `react-md-editor` (오픈소스)
+- Dynamic import로 SSR 문제 회피
+- 포스트 생성/수정에 동일하게 사용
+
+**4. Slug 불변 정책**
+```typescript
+// PATCH /api/posts에서
+if (_slug !== undefined) {
+  return error('Slug cannot be modified');
+}
+```
+
+**이유:**
+- URL이 변경되면 기존 링크 깨짐
+- SEO 신호 손실
+- 포스트 조회 불가능
+
+---
+
+## 6. 전체 데이터 흐름도
 
 ```
 [사용자 포스트 작성]
@@ -760,6 +884,36 @@ match_threshold: 0.7   // 유사도 70% 미만은 무시
 [ISR 캐시 무효화]
      ↓
 [최대 1시간 후 메인 페이지에 반영]
+
+---
+
+[사용자 포스트 수정]
+     ↓
+[어드민: Edit 페이지]
+     ↓
+[PATCH /api/posts]
+     ↓
+[Supabase: posts 테이블 UPDATE]
+     ↓
+[Content/Title 변경 시 OpenAI: 임베딩 재생성]
+     ↓
+[Supabase: post_embeddings UPSERT]
+     ↓
+[ISR 캐시 무효화]
+     ↓
+[최대 30분 후 포스트 페이지 반영]
+
+---
+
+[사용자 포스트 삭제]
+     ↓
+[DELETE /api/posts?slug=xxx]
+     ↓
+[Supabase: posts 테이블 DELETE]
+     ↓
+[Cascade: post_embeddings 자동 삭제]
+     ↓
+[ISR 캐시 무효화]
 
 ---
 
@@ -782,7 +936,7 @@ match_threshold: 0.7   // 유사도 70% 미만은 무시
 
 ---
 
-## 6. 비용 수렴 원칙 검증
+## 7. 비용 수렴 원칙 검증
 
 ### 트래픽 시나리오: 일 방문자 1000명
 

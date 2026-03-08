@@ -18,7 +18,11 @@ A modern, cost-optimized blog platform built with Next.js, featuring:
 
 ### Admin Panel
 - ✅ Dashboard with statistics
-- ✅ Post management (create, edit, delete)
+- ✅ Post management (create, read, edit, delete)
+  - ✅ Create: `/admin/posts/new`
+  - ✅ Edit: `/admin/posts/[slug]/edit` (slug-based URL)
+  - ✅ Auto-regenerate embeddings on content change
+  - ✅ Slug immutability (cannot be changed after creation)
 - ✅ Markdown editor (react-md-editor)
 - ✅ Category management (3-level hierarchy)
 - ✅ Media library (image upload to Supabase Storage)
@@ -43,7 +47,13 @@ musing-blog/
 │   │   ├── admin/              # Admin panel pages
 │   │   │   ├── layout.tsx      # Admin layout
 │   │   │   ├── page.tsx        # Dashboard
-│   │   │   ├── posts/          # Post management
+│   │   │   ├── posts/
+│   │   │   │   ├── new/        # Create post
+│   │   │   │   └── [slug]/
+│   │   │   │       ├── edit/   # Edit post (Server + Client)
+│   │   │   │       │   ├── page.tsx
+│   │   │   │       │   └── EditPostForm.tsx
+│   │   │   │       └── delete/ # Delete post
 │   │   │   ├── categories/     # Category management
 │   │   │   ├── media/          # Media library
 │   │   │   ├── rag/            # RAG settings
@@ -250,6 +260,24 @@ Manage via Admin Panel → Categories.
 3. Select category
 4. Check "Publish immediately" or save as draft
 5. Embedding is auto-generated for published posts
+
+### Editing Posts
+
+1. Go to `/admin/posts`
+2. Click on a post to edit (or navigate to `/admin/posts/[slug]/edit`)
+3. Update title, content, category, or excerpt
+4. Note: Slug cannot be changed (to preserve URL integrity)
+5. Save changes
+6. If content/title changed and post is published:
+   - Embedding is automatically regenerated
+   - Changes reflect in RAG chatbot within minutes
+
+### Deleting Posts
+
+1. Go to `/admin/posts`
+2. Click delete button on a post
+3. Confirms deletion
+4. Post embeddings automatically deleted (CASCADE)
 
 ### Managing Categories
 
