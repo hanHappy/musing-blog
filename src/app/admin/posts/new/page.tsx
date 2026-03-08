@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import type { Category } from '@/types/database';
+import type { Category, CategoryWithChildren } from '@/types/database';
 
 // Dynamically import markdown editor to avoid SSR issues
 const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
@@ -23,9 +23,9 @@ export default function NewPostPage() {
     // Fetch categories
     fetch('/api/categories')
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: CategoryWithChildren[]) => {
         // Flatten tree to list
-        const flattenCategories = (cats: any[]): Category[] => {
+        const flattenCategories = (cats: CategoryWithChildren[]): Category[] => {
           return cats.flatMap((cat) => [
             cat,
             ...(cat.children ? flattenCategories(cat.children) : []),

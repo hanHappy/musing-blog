@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   const filepath = `images/${filename}`;
 
   // Upload to Supabase Storage
-  const { data: uploadData, error: uploadError } = await supabase.storage
+  const { error: uploadError } = await supabase.storage
     .from('blog-images')
     .upload(filepath, file, {
       cacheControl: '31536000', // 1 year

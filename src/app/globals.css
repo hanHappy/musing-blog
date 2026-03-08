@@ -338,6 +338,98 @@
     }
   }
 
+  /* Breadcrumb styles */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .breadcrumb-link {
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+    text-decoration: none;
+  }
+
+  .breadcrumb-link:hover {
+    color: var(--color-primary);
+  }
+
+  .breadcrumb-separator {
+    color: var(--text-muted);
+    user-select: none;
+  }
+
+  .breadcrumb-current {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  /* Table of Contents styles */
+  .toc-container {
+    max-height: 70vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-primary) var(--bg-secondary);
+  }
+
+  .toc-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .toc-container::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 3px;
+  }
+
+  .toc-container::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+    border-radius: 3px;
+  }
+
+  .toc-item {
+    position: relative;
+    padding: 0.5rem 0.75rem 0.5rem 1rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    cursor: pointer;
+  }
+
+  .toc-item:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .toc-item.active {
+    background: var(--bg-tertiary);
+    color: var(--color-primary);
+    font-weight: 500;
+    border-left: 3px solid var(--color-primary);
+    padding-left: calc(1rem - 3px);
+  }
+
+  .toc-item.level-3 {
+    padding-left: 2rem;
+    font-size: 0.8125rem;
+  }
+
+  .toc-item.level-3.active {
+    padding-left: calc(2rem - 3px);
+  }
+
+  .toc-item.level-3::before {
+    content: '•';
+    position: absolute;
+    left: 1rem;
+    color: var(--text-muted);
+  }
+
   /* Category Tree */
   .category-tree {
     position: relative;
@@ -377,6 +469,18 @@
     font-weight: 500;
   }
 
+  /* Keyboard focus indicator */
+  *:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Smooth scroll */
+  html {
+    scroll-behavior: smooth;
+  }
+
   /* Post Prose - Markdown HTML Styling */
   .post-prose {
     color: var(--text-primary);
@@ -395,6 +499,11 @@
     margin-bottom: 1rem;
     font-weight: 600;
     line-height: 1.3;
+  }
+
+  .post-prose h2,
+  .post-prose h3 {
+    scroll-margin-top: 2rem;
   }
 
   .post-prose h2 {

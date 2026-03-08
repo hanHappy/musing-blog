@@ -11,7 +11,11 @@ A modern, cost-optimized blog platform built with Next.js, featuring:
 
 ### Public Blog
 - ✅ 3-level category tree (collapsible)
+- ✅ Category filtering pages (`/category/[slug]`)
 - ✅ Blog post listing with ISR caching
+- ✅ Table of Contents with scroll spy navigation
+- ✅ Breadcrumb navigation (clickable hierarchy)
+- ✅ 3-column responsive layout
 - ✅ RAG chatbot for Q&A about blog content
 - ✅ Dark/Light mode support
 - ✅ Responsive "Deep Sea" theme
@@ -64,21 +68,34 @@ musing-blog/
 │   │   │   ├── media/          # Media upload/delete
 │   │   │   ├── chat/           # RAG chatbot
 │   │   │   └── admin/stats/    # Dashboard stats
+│   │   ├── category/[slug]/    # Category filter pages
+│   │   ├── posts/[slug]/       # Individual post pages
 │   │   ├── login/              # Login page
 │   │   └── page.tsx            # Public homepage
 │   ├── components/
 │   │   ├── admin/              # Admin components
 │   │   │   ├── AdminNav.tsx
 │   │   │   └── ...
+│   │   ├── Breadcrumb.tsx      # Hierarchical navigation
+│   │   ├── CategoryInfo.tsx    # Category sidebar
 │   │   ├── Header.tsx
 │   │   ├── Footer.tsx
+│   │   ├── PostCard.tsx        # Post preview card
 │   │   ├── Sidebar.tsx         # Category tree
+│   │   ├── TableOfContents.tsx # Scroll spy TOC
 │   │   └── ...
+│   ├── hooks/
+│   │   ├── useLocalStorage.ts  # SSR-safe localStorage hook
+│   │   └── useScrollSpy.ts     # Scroll spy for TOC
 │   ├── lib/
+│   │   ├── constants.ts        # Cache durations, storage keys
 │   │   ├── supabase.ts         # Client-side Supabase
-│   │   └── supabase-server.ts  # Server-side Supabase
+│   │   ├── supabase-server.ts  # Server-side Supabase
+│   │   └── utils/
+│   │       └── category.ts     # Category tree utilities
 │   ├── types/
-│   │   └── database.ts         # TypeScript types
+│   │   ├── category.ts         # Category, Breadcrumb, TOC types
+│   │   └── database.ts         # Database types
 │   └── middleware.ts           # Auth middleware
 ├── supabase/
 │   └── migrations/
@@ -157,11 +174,45 @@ See `description.md` for detailed explanation of:
 - 3-level category hierarchy
 - RLS (Row Level Security) policies
 
+### Page Layout (3-Column Design)
+
+Post and category pages use a responsive 3-column layout:
+
+```
+┌──────────────┬───────────────────────┬──────────────┐
+│   Sidebar    │    Main Content       │  Right Panel │
+│  (Category   │    (55% width)        │   (TOC or    │
+│    Tree)     │                       │ Category Info)│
+│  Collapsible │  Post/Category List   │  Collapsible │
+└──────────────┴───────────────────────┴──────────────┘
+```
+
+- **Left Sidebar**: Category tree with expand/collapse
+- **Main Content**: Post content or category post list
+- **Right Sidebar**:
+  - Post page: Table of Contents with scroll spy
+  - Category page: Category description and subcategories
+
+### Navigation Features
+
+**Breadcrumb Navigation**:
+- Shows hierarchical path (Home > IT > Backend > Node.js)
+- All parent categories are clickable links
+- Current page shown without link
+- Fully accessible with ARIA labels
+
+**Table of Contents**:
+- Auto-extracts H2 and H3 headings from markdown
+- Scroll spy highlights active section
+- Smooth scroll to section on click
+- Collapse state persisted in localStorage
+
 ### Caching Strategy
 
 - **Posts list**: ISR with 1-hour revalidation
-- **Individual posts**: ISR with 30-minute revalidation
-- **Categories**: ISR with 24-hour revalidation
+- **Individual posts**: ISR with 24-hour revalidation
+- **Categories**: ISR with 24-hour revalidation (includes static generation at build time)
+- **Category tree**: Client-side cache (1 hour in localStorage)
 - **Images**: Immutable cache (1 year)
 
 ### RAG (Retrieval-Augmented Generation)

@@ -1,7 +1,7 @@
 // API route for RAG chatbot
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
-import type { ChatRequest, ChatResponse } from '@/types/database';
+import type { ChatRequest, ChatResponse, SearchPostsResult } from '@/types/database';
 
 export async function POST(request: Request) {
   try {
@@ -66,9 +66,12 @@ export async function POST(request: Request) {
       });
     }
 
+    // Cast to proper type
+    const typedPosts = similarPosts as SearchPostsResult[];
+
     // Step 3: Build context from similar posts
-    const context = similarPosts
-      .map((post: any) => `### ${post.title}\n${post.content.slice(0, 1000)}`)
+    const context = typedPosts
+      .map((post) => `### ${post.title}\n${post.content.slice(0, 1000)}`)
       .join('\n\n');
 
     // Step 4: Generate answer using GPT
@@ -117,7 +120,7 @@ ${context}
     // Step 5: Return answer with sources
     const response: ChatResponse = {
       answer,
-      sources: similarPosts.map((post: any) => ({
+      sources: typedPosts.map((post) => ({
         title: post.title,
         slug: post.slug,
       })),

@@ -3,9 +3,36 @@
 import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import PostCard from '@/components/PostCard';
-import TableOfContents from '@/components/TableOfContents';
 import ChatInput from '@/components/ChatInput';
 import ChatSession from '@/components/ChatSession';
+
+// Simple About/Contact sidebar for homepage
+function AboutSidebar() {
+  return (
+    <aside className="hidden w-full border-l border-[var(--border-color)] pl-6 lg:block lg:w-1/4">
+      <div className="sticky top-4 space-y-6">
+        <div className="card">
+          <h2 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">
+            About
+          </h2>
+          <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
+            A contemplative space for exploring ideas, technology, and the
+            depths of thought.
+          </p>
+        </div>
+
+        <div className="card">
+          <h2 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">
+            Contact
+          </h2>
+          <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
+            Feel free to reach out with questions, ideas, or feedback.
+          </p>
+        </div>
+      </div>
+    </aside>
+  );
+}
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -84,12 +111,6 @@ const posts = [
   },
 ];
 
-const tocItems = [
-  { id: 'section-1', text: 'Latest Chronicles', level: 2 },
-  { id: 'section-2', text: 'Featured Tales', level: 2 },
-  { id: 'section-3', text: 'Archives', level: 2 },
-];
-
 export default function Home() {
   const [isChatActive, setIsChatActive] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -160,7 +181,7 @@ export default function Home() {
         </main>
 
         {/* Right Panel - About & Contact */}
-        <TableOfContents items={tocItems} />
+        <AboutSidebar />
       </div>
     </div>
   );

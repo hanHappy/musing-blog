@@ -51,7 +51,8 @@ export default function LoginPage() {
 
       // 성공 - /admin으로 리디렉션
       router.push('/admin')
-    } catch (err) {
+    } catch (_err) {
+      console.error('Login error:', _err);
       setError('An unexpected error occurred.')
       setLoading(false)
     }

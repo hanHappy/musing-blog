@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import type { Media } from '@/types/database';
 
 export default function MediaPage() {
@@ -34,7 +35,8 @@ export default function MediaPage() {
       if (!res.ok) throw new Error('Upload failed');
 
       await fetchMedia();
-    } catch (error) {
+    } catch (_error) {
+      console.error('Failed to upload file:', _error);
       alert('Failed to upload file');
     } finally {
       setUploading(false);
@@ -47,7 +49,8 @@ export default function MediaPage() {
     try {
       await fetch(`/api/media?id=${id}`, { method: 'DELETE' });
       await fetchMedia();
-    } catch (error) {
+    } catch (_error) {
+      console.error('Failed to delete file:', _error);
       alert('Failed to delete file');
     }
   };
@@ -121,11 +124,13 @@ export default function MediaPage() {
                 e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
               }}
             >
-              <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-100">
-                <img
+              <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-100 relative">
+                <Image
                   src={item.url}
                   alt={item.alt_text || item.filename}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 33vw, 25vw"
                 />
               </div>
 

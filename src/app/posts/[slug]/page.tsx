@@ -4,7 +4,16 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { createBrowserClient } from '@supabase/ssr';
 import { createClient } from '@/lib/supabase-server';
-import { buildCategoryMap, getCategoryPath } from '@/lib/utils/category';
+import { getCachedCategoryTree } from '@/lib/supabase/cache';
+import {
+  buildCategoryMap,
+  getCategoryPath,
+  getCategorySlugByName,
+} from '@/lib/utils/category';
+import Sidebar from '@/components/Sidebar';
+import Breadcrumb from '@/components/Breadcrumb';
+import TableOfContents from '@/components/TableOfContents';
+import type { BreadcrumbSegment } from '@/types/category';
 
 // ISR: 24시간마다 재검증
 export const revalidate = 86400;
@@ -53,7 +62,7 @@ export async function generateMetadata({
   const supabase = await createClient();
   const { data: post } = await supabase
     .from('posts')
-    .select('title, excerpt, created_at, updated_at')
+    .select('title, excerpt, created_at')
     .eq('slug', slug)
     .eq('published', true)
     .single();
@@ -65,14 +74,13 @@ export async function generateMetadata({
   }
 
   return {
-    title: post.title,
+    title: `${post.title} - Muse.log`,
     description: post.excerpt || undefined,
     openGraph: {
       title: post.title,
       description: post.excerpt || undefined,
       type: 'article',
       publishedTime: post.created_at,
-      modifiedTime: post.updated_at,
     },
   };
 }
@@ -113,61 +121,85 @@ export default async function PostPage({ params }: PageProps) {
     notFound();
   }
 
+  // Get all categories for sidebar and breadcrumb
+  const allCategories = await getCachedCategoryTree();
+  const categoryMap = buildCategoryMap(allCategories);
+
   // 카테고리 경로 구성
   let categoryPath = 'Uncategorized';
   if (post.category) {
-    const { data: categories } = await supabase.from('categories').select('*');
-
-    if (categories) {
-      const categoryMap = buildCategoryMap(categories);
-      categoryPath = getCategoryPath(post.category.id, categoryMap);
-    }
+    categoryPath = getCategoryPath(post.category.id, categoryMap);
   }
 
+  // Build breadcrumb
+  const pathSegments = categoryPath.split(' > ');
+  const segments: BreadcrumbSegment[] = [
+    { name: 'Home', href: '/' },
+    ...pathSegments.map((name) => {
+      const slug = getCategorySlugByName(name, categoryMap);
+      return {
+        name,
+        href: slug ? `/category/${slug}` : undefined,
+      };
+    }),
+    { name: post.title }, // Current post (no link)
+  ];
+
+  // Build category tree for sidebar
+  type CategoryTreeNode = {
+    name: string;
+    slug: string;
+    children: CategoryTreeNode[];
+  };
+
+  function buildTree(parentId: string | null = null): CategoryTreeNode[] {
+    return allCategories
+      .filter((cat) => cat.parent_id === parentId)
+      .map((cat) => ({
+        name: cat.name,
+        slug: cat.slug,
+        children: buildTree(cat.id),
+      }));
+  }
+
+  const categoryTree = buildTree();
+
   return (
-    <article className="max-w-4xl mx-auto px-4 py-8">
-      {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="mb-6">
-        <div
-          className="text-sm font-medium"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          📁 {categoryPath}
-        </div>
-      </nav>
+    <div className="mx-auto max-w-7xl px-4 py-8">
+      <Breadcrumb segments={segments} />
 
-      {/* 제목 */}
-      <h1
-        className="text-4xl md:text-5xl font-bold mb-4"
-        style={{ color: 'var(--text-primary)' }}
-      >
-        {post.title}
-      </h1>
+      <div className="flex gap-8">
+        {/* Left Sidebar */}
+        <Sidebar categories={categoryTree} />
 
-      {/* 메타데이터 */}
-      <div
-        className="flex flex-wrap gap-4 text-sm mb-8 pb-6 border-b"
-        style={{
-          color: 'var(--text-secondary)',
-          borderColor: 'var(--border-color)',
-        }}
-      >
-        <time dateTime={post.created_at} className="flex items-center gap-1">
-          📅 <span>{formatDate(post.created_at)}</span>
-        </time>
-        {post.updated_at !== post.created_at && (
-          <time dateTime={post.updated_at} className="flex items-center gap-1">
-            ✏️ <span>Updated {formatDate(post.updated_at)}</span>
-          </time>
-        )}
+        {/* Main Content */}
+        <article className="w-full lg:w-[55%]">
+          {/* 제목 */}
+          <h1 className="mb-4 text-4xl font-bold text-[var(--text-primary)] md:text-5xl">
+            {post.title}
+          </h1>
+
+          {/* 메타데이터 */}
+          <div className="mb-8 flex flex-wrap gap-4 border-b border-[var(--border-color)] pb-6 text-sm text-[var(--text-secondary)]">
+            <time
+              dateTime={post.created_at}
+              className="flex items-center gap-1"
+            >
+              📅 <span>{formatDate(post.created_at)}</span>
+            </time>
+          </div>
+
+          {/* 본문 - react-markdown 사용 */}
+          <div className="post-prose">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {post.content}
+            </ReactMarkdown>
+          </div>
+        </article>
+
+        {/* Right Sidebar - Table of Contents */}
+        <TableOfContents content={post.content} />
       </div>
-
-      {/* 본문 - react-markdown 사용 */}
-      <div className="post-prose">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-          {post.content}
-        </ReactMarkdown>
-      </div>
-    </article>
+    </div>
   );
 }

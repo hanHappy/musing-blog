@@ -108,3 +108,58 @@ export function setCachedCategories(categories: Category[]): void {
     // Storage quota 초과 시 무시
   }
 }
+
+/**
+ * Recursively finds all descendant category IDs for a given category.
+ * Uses BFS to avoid infinite loops in case of circular references.
+ *
+ * @param categoryId - The parent category ID
+ * @param categoryMap - Map of all categories
+ * @returns Array of category IDs including the parent and all descendants
+ */
+export function getDescendantCategoryIds(
+  categoryId: string,
+  categoryMap: Map<string, Category>
+): string[] {
+  const ids = [categoryId];
+  const queue = [categoryId];
+  const visited = new Set<string>([categoryId]);
+  let depth = 0;
+
+  while (queue.length > 0 && depth < 10) {
+    const current = queue.shift()!;
+    const children = Array.from(categoryMap.values()).filter(
+      (cat) => cat.parent_id === current
+    );
+
+    children.forEach((child) => {
+      if (!visited.has(child.id)) {
+        ids.push(child.id);
+        queue.push(child.id);
+        visited.add(child.id);
+      }
+    });
+
+    depth++;
+  }
+
+  return ids;
+}
+
+/**
+ * Finds category slug by category name.
+ * Used for breadcrumb navigation.
+ *
+ * @param name - Category name to search for
+ * @param categoryMap - Map of all categories
+ * @returns Category slug or empty string if not found
+ */
+export function getCategorySlugByName(
+  name: string,
+  categoryMap: Map<string, Category>
+): string {
+  const category = Array.from(categoryMap.values()).find(
+    (cat) => cat.name === name
+  );
+  return category?.slug || '';
+}

@@ -45,7 +45,8 @@ export default function CategoriesPage() {
         level: 1,
         description: '',
       });
-    } catch (error) {
+    } catch (_error) {
+      console.error('Failed to create category:', _error);
       alert('Failed to create category');
     }
   };
@@ -57,7 +58,8 @@ export default function CategoriesPage() {
     try {
       await fetch(`/api/categories?id=${id}`, { method: 'DELETE' });
       await fetchCategories();
-    } catch (error) {
+    } catch (_error) {
+      console.error('Failed to delete category:', _error);
       alert('Failed to delete category');
     }
   };
