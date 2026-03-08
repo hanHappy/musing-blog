@@ -17,7 +17,7 @@
 | 복잡도 감소, 코드 중복 제거 | `refactoring` | 선택적 |
 | 문서 업데이트, CHANGELOG 작성 | `documentation` | 테스트 통과 후 필수 |
 | Vercel 배포, CI/CD 설정 | `deployment-automation` | 문서화 후 필수 |
-| Git commit, 릴리스 태그 | `vcs` | 배포 후 필수 |
+| Git commit, 릴리스 태그 | `vcs` | **예외 없음. 직접 git 명령 실행 금지** |
 | 비용 영향 검토 (**Veto Power**) | `cost-optimization` | 모든 설계/구현 전 필수 |
 
 ### Sub-Agent Routing (실행 방식)
