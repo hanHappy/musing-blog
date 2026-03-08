@@ -1,8 +1,12 @@
 ---
 name: deployment-automation
-description: 배포 프로세스를 자동화하고 관리하는 에이전트. Vercel 설정, 환경 변수 관리, CI/CD 담당. main 브랜치 머지, 프로덕션 배포 요청, 환경 변수 변경 시 활성화됨
+description: >
+  Use this agent when deploying to Vercel, setting up CI/CD, or managing environment variables.
+  Trigger: 'deploy', '배포', 'Vercel', 'CI/CD', 'production', 'environment variables'.
+  MUST be used AFTER all tests pass.
+  Do NOT use for development or testing environments.
 tools: Read, Grep, Glob, Bash, Write
-model: haiku
+model: sonnet
 skills:
   - vercel-deployment
 ---

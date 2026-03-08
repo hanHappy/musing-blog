@@ -1,6 +1,9 @@
 ---
 name: rls-policies
-description: Supabase RLS 정책 패턴 (posts, comments 테이블). 새로운 RLS 정책 작성 시 사용.
+description: >
+  Read this skill BEFORE creating database tables, writing RLS policies, or implementing auth-based access control.
+  Use when: adding new Supabase tables, setting up user permissions, implementing role-based access.
+  Contains: proven RLS policy patterns for posts, comments, profiles with SELECT/INSERT/UPDATE/DELETE examples.
 ---
 
 ## RLS 정책 예시

@@ -1,7 +1,11 @@
 ---
 name: design-architecture
-description: 시스템 아키텍처, 데이터 모델, API 설계를 담당하는 에이전트. 새로운 기능 추가, 데이터 모델 변경, API 엔드포인트 추가, 렌더링 전략 결정 시 활성화됨
-tools: Read, Grep, Glob, Bash
+description: >
+  Use this agent when adding new features, changing data models, or designing APIs.
+  Trigger: 'architecture', '아키텍처', 'data model', 'API endpoint', 'schema', 'SSG', 'ISR'.
+  MUST be used BEFORE any implementation starts.
+  Do NOT use for UI design (use design-ui-ux) or security (use security agent).
+tools: Read, Grep, Glob
 model: sonnet
 ---
 

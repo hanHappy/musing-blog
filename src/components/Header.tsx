@@ -9,7 +9,7 @@ export default function Header() {
           {/* Logo / Title */}
           <Link href="/" className="flex items-center gap-2">
             <h1 className="font-bold text-[var(--text-primary)]">
-              musing
+              muse.log
             </h1>
           </Link>
 

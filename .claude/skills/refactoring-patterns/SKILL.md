@@ -1,6 +1,9 @@
 ---
 name: refactoring-patterns
-description: Extract Function, Remove Duplication, 복잡도 측정 기준 등 리팩토링 패턴.
+description: >
+  Read this skill BEFORE refactoring complex or duplicated code.
+  Use when: functions exceed 100 lines, cyclomatic complexity > 10, duplicate code detected, or tests fail due to complexity.
+  Contains: proven refactoring patterns (Extract Function, Remove Duplication, Polymorphism) with complexity measurement thresholds.
 ---
 
 ## 리팩토링 패턴

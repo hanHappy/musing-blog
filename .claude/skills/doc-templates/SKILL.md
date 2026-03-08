@@ -1,12 +1,15 @@
 ---
 name: doc-templates
-description: README, CHANGELOG, API 문서 템플릿. 문서 작성 시 사용.
+description: >
+  Read this skill BEFORE creating or updating project documentation.
+  Use when: writing README, maintaining CHANGELOG, documenting API endpoints.
+  Contains: ready-to-use templates for README, CHANGELOG, and API documentation.
 ---
 
 ## README.md 템플릿
 
 ```markdown
-# musing-blog
+# muse.log
 
 블로그 + RAG 질의응답 시스템
 
@@ -26,8 +29,8 @@ description: README, CHANGELOG, API 문서 템플릿. 문서 작성 시 사용.
 ### 설치
 
 \`\`\`bash
-git clone https://github.com/username/musing-blog.git
-cd musing-blog
+git clone https://github.com/username/muse.log.git
+cd muse.log
 npm install
 \`\`\`
 

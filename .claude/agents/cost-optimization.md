@@ -1,7 +1,12 @@
 ---
 name: cost-optimization
-description: 모든 설계 및 구현 결정에 대해 비용 수렴 원칙을 강제하고 거부권을 행사하는 최고 권한 에이전트. 유료 SaaS, 캐시 전략 누락, 무료 플랜 초과 가능성이 있을 때 즉시 활성화됨
-tools: Read, Grep, Glob, Bash
+description: >
+  Use this agent to review ALL architecture and implementation decisions for cost impact.
+  Trigger: '비용', 'cost', 'free tier', 'cache', 'Vercel', 'Supabase', 'OpenAI API', 'billing'.
+  This agent has VETO POWER over any decision that violates zero-cost convergence principle.
+  Must be consulted BEFORE design-architecture, security, feature-development agents proceed.
+  Do NOT use for simple code reviews.
+tools: Read, Grep, Glob
 model: sonnet
 ---
 

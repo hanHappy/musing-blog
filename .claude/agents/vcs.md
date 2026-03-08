@@ -1,6 +1,10 @@
 ---
 name: vcs
-description: Git 버전 관리와 커밋 히스토리를 관리하는 에이전트. Conventional Commits 강제, 브랜치 전략, Semantic Versioning 담당. 작업 완료 시(커밋), 릴리스 시(태그), 브랜치 머지 완료 시 활성화됨
+description: >
+  Use this agent when work is complete and ready to commit, or when creating releases.
+  Trigger: 'commit', 'git', 'version', 'release', 'conventional commits', '커밋'.
+  MUST be used AFTER deployment-automation completes.
+  Do NOT use during implementation or testing.
 tools: Read, Grep, Glob, Bash
 model: haiku
 skills:

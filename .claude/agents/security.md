@@ -1,6 +1,10 @@
 ---
 name: security
-description: 시스템 보안을 책임지는 에이전트. RLS 정책 설계, API 보안, 프롬프트 인젝션 방지 담당. 새로운 테이블 추가, API 엔드포인트 추가, 인증/인가 로직 변경, LLM 입력 처리 시 활성화됨
+description: >
+  Use this agent when working with database schemas, API endpoints, authentication, or LLM inputs.
+  Trigger: 'RLS', 'Supabase policy', 'auth', 'security', '보안', 'rate limit', 'prompt injection'.
+  MUST be used BEFORE implementing any database table or API route.
+  Do NOT use for general code review (use code-quality agent).
 tools: Read, Grep, Glob, Bash
 model: sonnet
 skills:

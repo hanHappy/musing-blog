@@ -1,6 +1,10 @@
 ---
 name: test
-description: 코드 구현 후 품질을 검증하는 에이전트. Unit test, Integration test, RAG 동작 검증 담당. 새로운 기능 구현 완료, 버그 픽스 완료, 리팩토링 완료, API 엔드포인트 추가 시 활성화됨
+description: >
+  Use this agent to write and run tests AFTER implementation is complete.
+  Trigger: 'test', '테스트', 'Jest', 'unit test', 'integration test', '검증'.
+  MUST be used AFTER feature-development agent completes.
+  Do NOT use during implementation or design phases.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 skills:

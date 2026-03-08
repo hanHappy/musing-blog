@@ -1,8 +1,13 @@
 ---
 name: code-quality
-description: 코드 작성 전후 품질 기준을 강제하는 에이전트. 린팅, 포맷팅, 타입 안전성, 네이밍 컨벤션 담당. 새로운 파일 작성 전, 코드 작성 완료 후, PR 제출 전 활성화됨
+description: >
+  Use this agent BEFORE writing code and AFTER to verify quality standards.
+  Trigger: 'ESLint', 'TypeScript', 'type check', '코드 품질', '린트', 'Prettier'.
+  Use BEFORE feature-development agent starts implementation.
+  Use AFTER implementation to verify lint/format/types.
+  Do NOT use for testing (use test agent) or refactoring (use refactoring agent).
 tools: Read, Grep, Glob, Bash
-model: haiku
+model: sonnet
 skills:
   - vercel-react-best-practices
   - eslint-prettier-config

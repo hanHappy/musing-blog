@@ -1,6 +1,9 @@
 ---
 name: eslint-prettier-config
-description: ESLint, Prettier, TypeScript, pre-commit hook 설정 파일. 코드 품질 도구 구성 시 사용.
+description: >
+  Read this skill BEFORE setting up or modifying ESLint, Prettier, or TypeScript configurations.
+  Use when: initializing project linting, updating code quality rules, configuring pre-commit hooks.
+  Contains: production-ready config files for ESLint, Prettier, TypeScript, and Husky.
 ---
 
 ## ESLint 설정

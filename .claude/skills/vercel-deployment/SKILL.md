@@ -1,6 +1,9 @@
 ---
 name: vercel-deployment
-description: vercel.json, GitHub Actions workflow, 배포 스크립트, 배포 체크리스트. Vercel 배포 설정 시 사용.
+description: >
+  Read this skill BEFORE deploying to Vercel, setting up CI/CD, or configuring environment variables.
+  Use when: first deployment, adding GitHub Actions, updating environment variables, writing deployment scripts.
+  Contains: vercel.json config, CI/CD workflow, deployment checklist, environment variable templates.
 ---
 
 ## vercel.json

@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Deep Sea Musing Theme - Light Mode (Default) */
+/* Deep Sea muse.log Theme - Light Mode (Default) */
 :root {
   /* Backgrounds */
   --bg-primary: #f8fafc;
@@ -27,7 +27,7 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Deep Sea Musing Theme - Dark Mode */
+/* Deep Sea muse.log Theme - Dark Mode */
 .dark {
   /* Backgrounds */
   --bg-primary: #020715;

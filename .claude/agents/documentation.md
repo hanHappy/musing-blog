@@ -1,6 +1,10 @@
 ---
 name: documentation
-description: 프로젝트 문서를 최신 상태로 유지하는 에이전트. 명세서 동기화, 변경 로그 관리, API 문서화 담당. 새로운 기능 추가 완료, 아키텍처 변경, API 변경, Breaking changes 시 활성화됨
+description: >
+  Use this agent when features are complete, architecture changes, or APIs are modified.
+  Trigger: 'docs', '문서', 'CHANGELOG', 'README', 'breaking change', 'API docs'.
+  MUST be used AFTER test agent completes.
+  Do NOT use during implementation.
 tools: Read, Grep, Glob, Edit, Write
 model: haiku
 skills:

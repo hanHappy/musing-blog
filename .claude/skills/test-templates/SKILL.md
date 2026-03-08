@@ -1,6 +1,9 @@
 ---
 name: test-templates
-description: Unit Test, Integration Test, RAG Test 템플릿. 새로운 테스트 작성 시 사용하는 보일러플레이트 코드.
+description: >
+  Read this skill BEFORE writing unit tests, integration tests, or RAG validation tests.
+  Use when: testing new functions, testing API endpoints, validating embedding generation or similarity search.
+  Contains: copy-paste ready test templates for all testing scenarios with describe/it structure.
 ---
 
 ## Unit Test 템플릿

@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <p className="text-sm text-[var(--text-muted)]">
-            © {new Date().getFullYear()} Musing. All rights reserved.
+            © {new Date().getFullYear()} muse.log. All rights reserved.
           </p>
         </div>
       </div>

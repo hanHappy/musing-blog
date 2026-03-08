@@ -1,6 +1,9 @@
 ---
 name: git-conventions
-description: Conventional Commits, 브랜치 전략, 커밋 가이드, Semantic Versioning. Git 작업 시 참고.
+description: >
+  Read this skill BEFORE creating commits, managing branches, or tagging releases.
+  Use when: writing commit messages, creating feature branches, preparing releases with semantic versioning.
+  Contains: Conventional Commits format, branch naming strategy, commit examples, version bump rules.
 ---
 
 ## Conventional Commits

@@ -1,6 +1,10 @@
 ---
 name: api-security-patterns
-description: API 인증 가드, input validation, rate limiting, 프롬프트 인젝션 방어 패턴.
+description: >
+  Read this skill BEFORE writing any API route, server action, or authentication logic.
+  Use when: adding auth guards, implementing input validation with Zod, setting up rate limiting,
+  protecting against prompt injection in LLM endpoints.
+  Contains: copy-paste ready TypeScript patterns for auth, validation, rate limiting, and prompt sanitization.
 ---
 
 ## API 인증 가드

@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import LayoutContent from '@/components/LayoutContent';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -12,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Musing',
+  title: 'muse.log',
   description: 'A contemplative space for deep thoughts and technical musings',
 };
 
@@ -30,9 +29,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange={false}
         >
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <LayoutContent>{children}</LayoutContent>
         </ThemeProvider>
       </body>
     </html>

@@ -1,6 +1,10 @@
 ---
 name: refactoring
-description: 코드 품질 개선과 리팩토링을 담당하는 에이전트. 기능 변경 없이 코드 구조와 가독성 개선. 복잡도 > 10, 함수 크기 > 100 lines, 중복 코드 발견, 테스트 실패(복잡도 원인) 시 활성화됨
+description: >
+  Use this agent when code complexity is high, duplication is found, or tests fail due to complexity.
+  Trigger: 'refactor', '리팩토링', 'complexity', 'duplicate', 'code smell', 'DRY'.
+  Use when: function > 100 lines, cyclomatic complexity > 10, code duplication detected.
+  Do NOT use for new features or bug fixes - refactor only.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 skills:

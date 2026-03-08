@@ -1,6 +1,9 @@
 ---
 name: test-config
-description: Jest, Testing Library 설정 파일 및 mocking 전략. 테스트 환경 구성 시 사용.
+description: >
+  Read this skill BEFORE setting up test infrastructure or mocking external dependencies.
+  Use when: initializing Jest, configuring Testing Library, mocking OpenAI/Supabase, setting coverage thresholds.
+  Contains: complete Jest config, setup files, mocking strategies for API calls and database connections.
 ---
 
 ## Jest 설정

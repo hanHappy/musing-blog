@@ -6,7 +6,7 @@ export default function ProfileCard() {
           <span className="text-2xl font-bold text-white">M</span>
         </div>
         <h3 className="mb-2 text-base font-semibold text-[var(--text-primary)]">
-          Musing
+          한상민
         </h3>
         <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
           A space for contemplation, exploration, and sharing thoughts on
