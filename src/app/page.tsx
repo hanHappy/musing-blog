@@ -97,8 +97,40 @@ function getMockData(): { categories: Category[]; posts: Post[] } {
 export const revalidate = 3600;
 
 export default async function Home() {
-  // TODO: DB 연결 후 아래 mock 대신 Supabase fetch로 교체
-  const { categories, posts } = getMockData();
+  let categories: Category[] = [];
+  let posts: Post[] = [];
+
+  try {
+    const supabase = await createClient();
+
+    const { data: categoriesData, error: categoriesError } = await supabase
+      .from('categories')
+      .select('*')
+      .order('level')
+      .order('order');
+
+    const { data: postsData, error: postsError } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('published', true)
+      .order('created_at', { ascending: false });
+
+    if (categoriesError || postsError) {
+      console.error('DB fetch error, falling back to mock data');
+    }
+
+    categories = categoriesData || [];
+    posts = postsData || [];
+  } catch (error) {
+    console.error('Supabase connection failed, using mock data:', error);
+  }
+
+  // DB가 비어있으면 mock 데이터로 폴백
+  if (categories.length === 0 && posts.length === 0) {
+    const mock = getMockData();
+    categories = mock.categories;
+    posts = mock.posts;
+  }
 
   const categoryTree = buildCategoryTree(categories);
   const neuralGraph = buildNeuralGraph(categoryTree, posts);

@@ -202,7 +202,7 @@ export function useD3ForceSimulation(
       if (!simulation) return;
       simulation.alphaTarget(0);
       const node = nodesRef.current.find((n) => n.id === nodeId);
-      if (node && node.level !== 3) {
+      if (node && node.level !== 1) {
         node.fx = null;
         node.fy = null;
       }

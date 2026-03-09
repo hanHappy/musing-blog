@@ -9,6 +9,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const categoryId = searchParams.get('category_id');
   const published = searchParams.get('published');
+  const slug = searchParams.get('slug');
 
   const supabase = await createClient();
   const admin = await isAdmin();
@@ -20,6 +21,11 @@ export async function GET(request: Request) {
       category:categories(*)
     `)
     .order('created_at', { ascending: false });
+
+  // Filter by slug if provided
+  if (slug) {
+    query = query.eq('slug', slug);
+  }
 
   // Filter by category if provided
   if (categoryId) {

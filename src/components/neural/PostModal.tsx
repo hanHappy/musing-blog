@@ -3,11 +3,21 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Post } from '@/types/database';
 
 interface PostModalProps {
   slug: string | null;
   onClose: () => void;
+}
+
+function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 }
 
 export function PostModal({ slug, onClose }: PostModalProps) {
@@ -32,8 +42,9 @@ export function PostModal({ slug, onClose }: PostModalProps) {
         }
 
         const data = await response.json();
-        if (data.posts && data.posts.length > 0) {
-          setPost(data.posts[0]);
+        const posts = Array.isArray(data) ? data : data.posts;
+        if (posts && posts.length > 0) {
+          setPost(posts[0]);
         } else {
           setError('Post not found');
         }
@@ -48,6 +59,17 @@ export function PostModal({ slug, onClose }: PostModalProps) {
     fetchPost();
   }, [slug]);
 
+  // ESC key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (slug) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [slug, onClose]);
+
   if (!slug) return null;
 
   return (
@@ -60,132 +82,103 @@ export function PostModal({ slug, onClose }: PostModalProps) {
         onClick={onClose}
       >
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
-        {/* Modal */}
+        {/* Modal — neural-center-card 스타일 (채팅 박스와 동일) */}
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-3xl max-h-[80vh] overflow-hidden rounded-2xl neural-center-card"
-          style={{
-            boxShadow:
-              '0 0 40px rgba(0, 255, 200, 0.3), inset 0 0 30px rgba(0, 255, 200, 0.05)',
-          }}
+          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: 20 }}
+          transition={{ type: 'spring', damping: 30, stiffness: 400 }}
+          className="relative w-full max-w-3xl max-h-[85vh] neural-center-card rounded-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 p-2 rounded-full hover:bg-[rgba(255,255,255,0.1)] transition-colors"
+            className="absolute top-5 right-5 z-10 p-2 rounded-lg hover:bg-[rgba(0,255,200,0.1)] transition-colors"
           >
-            <X size={24} style={{ color: 'var(--neural-text-primary)' }} />
+            <X size={20} style={{ color: 'var(--neural-accent)' }} />
           </button>
 
-          {/* Content */}
+          {/* Scrollable content */}
           <div
-            className="overflow-y-auto max-h-[80vh] p-12"
+            className="overflow-y-auto max-h-[85vh] p-10 pt-8"
             style={{
               scrollbarWidth: 'thin',
-              scrollbarColor: 'var(--neural-border-glow) transparent',
+              scrollbarColor: 'rgba(0,255,200,0.3) transparent',
             }}
           >
+            {/* Loading */}
             {loading && (
               <div className="flex items-center justify-center h-64">
                 <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#00FFC8] animate-pulse" />
-                  <div
-                    className="w-3 h-3 rounded-full bg-[#00FFC8] animate-pulse"
-                    style={{ animationDelay: '0.2s' }}
-                  />
-                  <div
-                    className="w-3 h-3 rounded-full bg-[#00FFC8] animate-pulse"
-                    style={{ animationDelay: '0.4s' }}
-                  />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#00FFC8] animate-pulse" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#00FFC8] animate-pulse" style={{ animationDelay: '0.2s' }} />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#00FFC8] animate-pulse" style={{ animationDelay: '0.4s' }} />
                 </div>
               </div>
             )}
 
+            {/* Error */}
             {error && (
               <div className="flex items-center justify-center h-64">
                 <p style={{ color: 'var(--neural-text-muted)' }}>{error}</p>
               </div>
             )}
 
+            {/* Post content */}
             {post && !loading && !error && (
-              <>
-                {/* Meta info */}
-                <div className="mb-6">
-                  <span
-                    className="inline-block px-3 py-1 rounded-full text-xs border mb-4"
-                    style={{
-                      borderColor: 'var(--neural-node-sub)',
-                      color: 'var(--neural-node-sub)',
-                      fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                    }}
-                  >
-                    {post.slug}
-                  </span>
-                </div>
-
+              <article>
                 {/* Title */}
                 <h1
-                  className="text-4xl mb-8"
+                  className="text-3xl mb-4 pr-8"
                   style={{
                     fontFamily: 'var(--font-space-grotesk), sans-serif',
                     color: 'var(--neural-text-primary)',
                     fontWeight: 600,
+                    lineHeight: 1.3,
                   }}
                 >
                   {post.title}
                 </h1>
 
+                {/* Meta */}
+                <div
+                  className="flex items-center gap-4 mb-6 pb-6 text-sm"
+                  style={{
+                    borderBottom: '1px solid rgba(0,255,200,0.15)',
+                    color: 'var(--neural-text-muted)',
+                  }}
+                >
+                  <time dateTime={post.created_at}>
+                    {formatDate(post.created_at)}
+                  </time>
+                </div>
+
                 {/* Excerpt */}
                 {post.excerpt && (
                   <p
-                    className="text-lg mb-8"
+                    className="text-base mb-8"
                     style={{
                       color: 'var(--neural-text-muted)',
-                      fontFamily: 'var(--font-inter), sans-serif',
+                      lineHeight: 1.7,
+                      fontStyle: 'italic',
                     }}
                   >
                     {post.excerpt}
                   </p>
                 )}
 
-                {/* Content - Simple markdown rendering */}
-                <div
-                  className="prose prose-invert max-w-none post-prose"
-                  style={{
-                    fontFamily: 'var(--font-inter), sans-serif',
-                    color: 'var(--neural-text-primary)',
-                    lineHeight: 1.8,
-                  }}
-                  dangerouslySetInnerHTML={{
-                    __html: post.content
-                      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-                      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-                      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                      .replace(/\n\n/g, '</p><p>')
-                      .replace(/^(.)/gm, '<p>$1')
-                      .replace(/(.)\n/g, '$1</p>'),
-                  }}
-                />
-              </>
+                {/* Body — ReactMarkdown + post-prose 스타일 */}
+                <div className="post-prose">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {post.content}
+                  </ReactMarkdown>
+                </div>
+              </article>
             )}
           </div>
-
-          {/* Glow effect */}
-          <div
-            className="absolute inset-0 pointer-events-none rounded-2xl"
-            style={{
-              background:
-                'radial-gradient(circle at 50% 0%, rgba(0, 255, 200, 0.1), transparent 50%)',
-            }}
-          />
         </motion.div>
       </motion.div>
     </AnimatePresence>
