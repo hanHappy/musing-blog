@@ -20,6 +20,7 @@ export interface NeuralNode {
   w?: number;
   h?: number;
   r?: number;
+  lines?: string[];
 }
 
 export interface NeuralGraphData {
@@ -35,18 +36,69 @@ const FONT_PX = { 1: 13, 2: 11, 3: 10 } as const;
 const CHAR_W = { 1: 8.5, 2: 7.5, 3: 6.8 } as const;
 
 /**
+ * Splits a label into lines that fit within the given inner width.
+ * Works for both Korean (no spaces) and English text by iterating
+ * character by character and breaking when the accumulated width exceeds maxInnerWidth.
+ */
+export function wrapLabel(label: string, maxInnerWidth: number, charWidth: number): string[] {
+  const maxCharsPerLine = Math.floor(maxInnerWidth / charWidth);
+  if (maxCharsPerLine <= 0) return [label];
+
+  const lines: string[] = [];
+  let remaining = label;
+
+  while (remaining.length > 0) {
+    if (remaining.length <= maxCharsPerLine) {
+      lines.push(remaining);
+      break;
+    }
+
+    // Try to break at a space within the allowed width
+    const segment = remaining.slice(0, maxCharsPerLine);
+    const lastSpace = segment.lastIndexOf(' ');
+
+    if (lastSpace > 0) {
+      lines.push(remaining.slice(0, lastSpace));
+      remaining = remaining.slice(lastSpace + 1);
+    } else {
+      // No space found — hard-break at maxCharsPerLine (handles Korean etc.)
+      lines.push(segment);
+      remaining = remaining.slice(maxCharsPerLine);
+    }
+  }
+
+  return lines;
+}
+
+/**
  * Calculate node size based on label and depth
  */
 function calculateNodeSize(node: NeuralNode): { w: number; h: number; r: number } {
   const depth = node.level || 0;
   const cw = CHAR_W[depth as keyof typeof CHAR_W] || 6.8;
   const fp = FONT_PX[depth as keyof typeof FONT_PX] || 10;
+  const MAX_W = 200;
 
   let w = node.label.length * cw + NODE_PAD_X * 2;
-  let h = fp + NODE_PAD_Y * 2;
 
   // Apply minimum and maximum constraints
-  w = Math.max(60, Math.min(260, w));
+  w = Math.max(60, Math.min(MAX_W, w));
+
+  // Compute wrapped lines when single-line width would exceed max
+  const singleLineW = node.label.length * cw + NODE_PAD_X * 2;
+  let lines: string[] | undefined;
+
+  if (singleLineW > MAX_W) {
+    const innerWidth = MAX_W - NODE_PAD_X * 2;
+    lines = wrapLabel(node.label, innerWidth, cw);
+    node.lines = lines;
+  } else {
+    node.lines = undefined;
+  }
+
+  const lineCount = lines ? lines.length : 1;
+  const lineHeight = fp + 4;
+  let h = lineCount === 1 ? fp + NODE_PAD_Y * 2 : lineCount * lineHeight + NODE_PAD_Y * 2;
   h = Math.max(28, h);
 
   // Calculate collision radius (diagonal length + margin)
@@ -129,13 +181,22 @@ export function buildNeuralGraph(
       const subcatSize = calculateNodeSize(subcatNode);
       Object.assign(subcatNode, subcatSize);
 
-      // Find posts for this subcategory
+      // Find level-3 subcategories under this level-2
+      const level3Categories = (subcat.children || []).filter(
+        (cat) => cat.level === 3
+      );
+
+      // Collect post IDs for level-3 categories
+      const level3CatIds = new Set(level3Categories.map((c) => c.id));
+
+      // Find posts for this subcategory (directly assigned or via level-3 children)
       const subcatPosts = posts.filter(
-        (post) => post.category_id === subcat.id && post.published
+        (post) =>
+          post.published &&
+          (post.category_id === subcat.id || level3CatIds.has(post.category_id || ''))
       );
 
       subcatPosts.forEach((post, postIndex) => {
-        // Position posts even further out
         const postAngle =
           subAngle + ((postIndex - subcatPosts.length / 2) * Math.PI) / 12;
         const postRadius = subRadius + 120;

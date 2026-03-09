@@ -280,16 +280,32 @@ export function NeuralNetwork({
                   )}
                   <text
                     x={depth === 1 ? 6 : 0}
-                    y={0}
                     fill={labelFill}
                     fontSize={fontSize}
                     fontWeight={fontWeight}
                     fontFamily="'Noto Sans KR', sans-serif"
-                    dominantBaseline="middle"
                     textAnchor="middle"
                     style={{ pointerEvents: 'none', userSelect: 'none' }}
                   >
-                    {node.label}
+                    {node.lines && node.lines.length > 1 ? (
+                      node.lines.map((line, i) => {
+                        const lineHeight = fontSize + 4;
+                        const totalHeight = node.lines!.length * lineHeight;
+                        const startY = -totalHeight / 2 + lineHeight / 2;
+                        return (
+                          <tspan
+                            key={i}
+                            x={depth === 1 ? 6 : 0}
+                            y={startY + i * lineHeight}
+                            dominantBaseline="middle"
+                          >
+                            {line}
+                          </tspan>
+                        );
+                      })
+                    ) : (
+                      <tspan dominantBaseline="middle" y={0}>{node.label}</tspan>
+                    )}
                   </text>
 
                   {highlighted && (
