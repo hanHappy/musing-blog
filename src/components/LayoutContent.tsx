@@ -12,7 +12,11 @@ export default function LayoutContent({
   const pathname = usePathname();
 
   // 헤더/푸터를 숨길 경로들
-  const hideLayout = pathname?.startsWith('/login') || pathname?.startsWith('/admin');
+  // 홈페이지(neural network UI), 로그인, 어드민 페이지에서 숨김
+  const hideLayout =
+    pathname === '/' ||
+    pathname?.startsWith('/login') ||
+    pathname?.startsWith('/admin');
 
   if (hideLayout) {
     return <>{children}</>;

@@ -7,6 +7,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+
+- **D3.js Force Simulation Integration**
+  - Implemented physics-based node positioning using D3.js force simulation
+  - Components and Hooks:
+    - `useD3ForceSimulation.ts`: Custom React hook for D3 force simulation with RAF throttling
+    - Updated `NeuralNetwork.tsx`: Replaced static positioning with D3-driven coordinates
+    - Updated `NetworkNode.tsx`: Removed Framer Motion position animations, using CSS transforms
+    - Updated `neural-graph-builder.ts`: Added dynamic node size calculation based on label length
+  - Physics Forces:
+    - `forceLink`: Depth-based link distances (120/100/80px)
+    - `forceManyBody`: Depth-based repulsion strength (-600/-300/-150)
+    - `forceCollide`: Collision detection using calculated node radius
+    - `forceRadial`: Depth-1 nodes arranged in 280px radius circle
+    - `forceCenter`: Weak centering force (0.03 strength)
+  - Performance Optimizations:
+    - RequestAnimationFrame throttling for 60fps smooth updates
+    - React.memo with custom comparison for NetworkNode (1px threshold)
+    - Framer Motion limited to scale/opacity only (no position animations)
+    - D3 handles physics, React handles rendering (clear separation of concerns)
+  - Node Size Calculation:
+    - Depth-based font sizes (13px/11px/10px) and character widths
+    - Dynamic width/height with min/max constraints
+    - Collision radius calculated from diagonal + margin
+
+- **Neural Network Homepage UI** (Desktop)
+  - Complete redesign of main page with interactive neural network visualization
+  - Components:
+    - `NeuralNetwork.tsx`: SVG-based graph rendering with node-edge connections
+    - `NetworkNode.tsx`: Animated category/subcategory/post nodes with hover effects
+    - `CenterCard.tsx`: Floating chat interface with RAG integration
+    - `ChatBubble.tsx`: Typing animation for AI responses
+    - `PostModal.tsx`: Full-screen post viewer with backdrop blur
+    - `NeuralHomePage.tsx`: Main orchestrator component
+  - Features:
+    - Real-time category/post network graph with ambient pulse animations
+    - Edge detection for expanding categories on screen edges
+    - Click-to-activate "night view" effect (dim non-active categories)
+    - RAG chatbot highlights related posts in the network
+    - ISR-based data fetching (1-hour revalidation)
+    - Framer Motion animations throughout
+  - Design System:
+    - Cyberpunk-inspired color palette (cyan #00FFC8, purple #A78BFA)
+    - Space Grotesk + IBM Plex Mono fonts
+    - Deep dark background (#080B10) with neural glow effects
+    - Backdrop blur + glassmorphism for center card
+
+- **Neural Graph Data Builder** (`lib/neural-graph-builder.ts`)
+  - Converts category tree + posts to positioned node graph
+  - Circular layout algorithm for radial distribution
+  - Hierarchical positioning (category → subcategory → posts)
+  - Node type mapping (category/subcategory/post)
+  - Helper functions for graph traversal and node lookup
+
 - **Category filtering pages** (`/category/[slug]`)
   - Displays posts from a category and its descendants
   - Shows category description and subcategories in right sidebar
@@ -43,15 +96,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Cache duration constants for categories and posts
 
 ### Changed
+- **Homepage UI paradigm**: Completely replaced 3-panel layout with neural network visualization
+  - Removed traditional sidebar navigation
+  - Removed post list view from homepage
+  - Chat-first interaction model
+  - Neural graph replaces category tree navigation
+  - Header and Footer removed from homepage (fullscreen neural UI)
+- **Color scheme**: Complete redesign with neural network theme
+  - Primary accent: Cyan glow (#00FFC8) replacing ocean blue
+  - Secondary: Purple nodes (#A78BFA)
+  - Background: Deep dark (#080B10) with gradient
+  - All admin pages now use neural theme
+  - Glow-based shadows instead of traditional drop shadows
+- **Font stack**: Added Space Grotesk and IBM Plex Mono for neural UI
+- **TypeScript config**: Excluded `node-design` folder from compilation
+- **Layout system**: LayoutContent now hides header/footer for homepage
 - **Post metadata display**: Removed `updated_at` field from post pages
 - **Post page layout**: Refactored to 3-column responsive design
 - **Category page layout**: Refactored to 3-column responsive design with `CategoryInfo` sidebar
 
 ### Fixed
+- **Hydration error**: Fixed SSR mismatch in NeuralNetwork component
+  - Removed dynamic `window.innerWidth` usage during SSR
+  - Implemented SVG viewBox for responsive coordinate system
+  - Lines now render correctly without hydration warnings
 - **ESLint errors**: Resolved all 11 linting errors
   - Fixed type imports across all files
   - Removed unused variables and imports
   - Corrected async function usage in components
+- **TypeScript errors**: Fixed JSX namespace and type issues
+  - Changed JSX.Element to ReactElement
+  - Fixed boolean type coercion in neural network
+  - Created shared ChatMessage type
 
 ### Performance
 - **Static generation**: Category pages now pre-generated at build time
@@ -63,10 +139,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## Project Info
 
 **Tech Stack**:
-- Next.js 14 (App Router)
+- Next.js 16 (App Router with Turbopack)
 - Supabase (PostgreSQL + pgvector)
 - OpenAI API (Embedding + Completion)
 - TypeScript
+- Framer Motion (animations)
+- Radix UI (components)
+- Lucide React (icons)
 
 **Cost Optimization**:
 - Static-first rendering (SSG/ISR)
