@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState, useEffect, type ReactElement } from 'react';
-import { motion } from 'motion/react';
-import { NetworkNode } from './NetworkNode';
+import { useMemo, useRef, useEffect, useCallback, useState } from 'react';
+import * as d3Selection from 'd3-selection';
+import * as d3Drag from 'd3-drag';
 import { useD3ForceSimulation } from '@/hooks/useD3ForceSimulation';
 import { flattenNeuralGraph } from '@/lib/neural-graph-builder';
 import type { NeuralNode } from '@/lib/neural-graph-builder';
@@ -12,7 +12,7 @@ interface NeuralNetworkProps {
   activeCategory: string | null;
   highlightedPosts: string[];
   onNodeClick: (node: NeuralNode) => void;
-  expandedEdge: 'top' | 'bottom' | 'left' | 'right' | null;
+  onBackgroundClick: () => void;
 }
 
 export function NeuralNetwork({
@@ -20,204 +20,301 @@ export function NeuralNetwork({
   activeCategory,
   highlightedPosts,
   onNodeClick,
+  onBackgroundClick,
 }: NeuralNetworkProps) {
-  // Edge hover state (for expanding nodes near screen edges)
-  const [expandedEdge, setExpandedEdge] = useState<'top' | 'bottom' | 'left' | 'right' | null>(null);
-
-  // Track mouse position for edge detection
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const edgeThreshold = 120; // px from edge
-      const { clientX, clientY } = e;
-      const { innerWidth, innerHeight } = window;
-
-      if (clientY < edgeThreshold) {
-        setExpandedEdge('top');
-      } else if (clientY > innerHeight - edgeThreshold) {
-        setExpandedEdge('bottom');
-      } else if (clientX < edgeThreshold) {
-        setExpandedEdge('left');
-      } else if (clientX > innerWidth - edgeThreshold) {
-        setExpandedEdge('right');
-      } else {
-        setExpandedEdge(null);
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
-  // Prepare initial nodes and links for D3
   const { initialNodes, links } = useMemo(() => {
     const flatNodes = flattenNeuralGraph(data);
     const linkList: { source: string; target: string; depth: number }[] = [];
 
-    const buildLinks = (node: NeuralNode, depth = 0) => {
+    const buildLinks = (node: NeuralNode) => {
       if (node.children) {
         node.children.forEach((child) => {
-          linkList.push({
-            source: node.id,
-            target: child.id,
-            depth: child.level || depth + 1,
-          });
-          buildLinks(child, child.level || depth + 1);
+          if (node.type !== 'root') {
+            linkList.push({
+              source: node.id,
+              target: child.id,
+              depth: child.level || 1,
+            });
+          }
+          buildLinks(child);
         });
       }
     };
-
     buildLinks(data);
-
-    return {
-      initialNodes: flatNodes,
-      links: linkList,
-    };
+    return { initialNodes: flatNodes, links: linkList };
   }, [data]);
 
-  // Viewport dimensions
-  const svgWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
-  const svgHeight = typeof window !== 'undefined' ? window.innerHeight : 1080;
+  const svgRef = useRef<SVGSVGElement>(null);
+  const gRef = useRef<SVGGElement>(null);
+  const nodesGRef = useRef<SVGGElement>(null);
 
-  // Use D3 force simulation
   const {
     nodes: allNodes,
     dragHandlers,
-    transform,
-    onWheel,
-    onPanStart,
-    onPanMove,
-    onPanEnd,
-    isPanning,
-  } = useD3ForceSimulation(initialNodes, links, {
-    width: svgWidth,
-    height: svgHeight,
+  } = useD3ForceSimulation(initialNodes, links, svgRef, gRef, {
     centerX: 0,
     centerY: 0,
   });
 
-  // Helper function to get node direction based on position
-  const getNodeDirection = (node: NeuralNode): 'top' | 'bottom' | 'left' | 'right' => {
-    const x = (node.x || 0) - svgWidth / 2;
-    const y = (node.y || 0) - svgHeight / 2;
+  // Store callbacks in refs so D3 drag can access latest versions
+  const onNodeClickRef = useRef(onNodeClick);
+  useEffect(() => { onNodeClickRef.current = onNodeClick; }, [onNodeClick]);
 
-    // Calculate angle from center
-    const angle = Math.atan2(y, x);
+  // Bind D3 drag to node <g> elements — this prevents zoom interference
+  useEffect(() => {
+    const nodesG = nodesGRef.current;
+    if (!nodesG || allNodes.length === 0) return;
 
-    if (angle >= -Math.PI / 4 && angle < Math.PI / 4) return 'right';
-    if (angle >= Math.PI / 4 && angle < (3 * Math.PI) / 4) return 'bottom';
-    if (angle >= (-3 * Math.PI) / 4 && angle < -Math.PI / 4) return 'top';
-    return 'left';
-  };
+    const nodeById = new Map(allNodes.map(n => [n.id, n]));
 
-  // Helper function to check if node should be visible based on expanded edge
-  const isNodeVisible = (node: NeuralNode): boolean => {
-    if (!expandedEdge) return true; // ambient state
+    // Select each node <g>, bind its data, and apply d3.drag
+    d3Selection.select(nodesG)
+      .selectAll<SVGGElement, unknown>('g.neural-node')
+      .each(function () {
+        const el = d3Selection.select<SVGGElement, NeuralNode>(this);
+        const nodeId = this.getAttribute('data-node-id');
+        if (!nodeId) return;
+        const node = nodeById.get(nodeId);
+        if (!node) return;
 
-    const direction = getNodeDirection(node);
-    return direction === expandedEdge;
-  };
+        // Bind datum
+        el.datum(node);
 
-  // Render connection lines using D3-updated positions
-  const renderConnections = () => {
-    const lines: ReactElement[] = [];
-    const nodeMap = new Map(allNodes.map((n) => [n.id, n]));
+        // Apply D3 drag
+        el.call(
+          d3Drag.drag<SVGGElement, NeuralNode>()
+            .on('start', (_event, d) => dragHandlers.onDragStart(d.id))
+            .on('drag', (event, d) => dragHandlers.onDrag(d.id, event.x, event.y))
+            .on('end', (_event, d) => dragHandlers.onDragEnd(d.id))
+        );
 
-    links.forEach((link) => {
-      const sourceNode = nodeMap.get(link.source);
-      const targetNode = nodeMap.get(link.target);
+        // Click — D3 drag already filters out drag gestures
+        el.on('click', (event) => {
+          event.stopPropagation();
+          onNodeClickRef.current(node);
+        });
+      });
+  }, [allNodes, dragHandlers]);
 
-      if (!sourceNode || !targetNode) return;
+  // --- Active/dimmed logic ---
+  const activeSet = useMemo(() => {
+    if (!activeCategory) return null;
+    const set = new Set<string>();
+    set.add(activeCategory);
 
-      const x1 = sourceNode.x || 0;
-      const y1 = sourceNode.y || 0;
-      const x2 = targetNode.x || 0;
-      const y2 = targetNode.y || 0;
+    const addDescendants = (nodeId: string) => {
+      const node = allNodes.find((n) => n.id === nodeId);
+      if (node?.children) {
+        node.children.forEach((child) => {
+          set.add(child.id);
+          addDescendants(child.id);
+        });
+      }
+    };
+    const addAncestors = (nodeId: string) => {
+      links.forEach((l) => {
+        if (l.target === nodeId && !set.has(l.source)) {
+          set.add(l.source);
+          addAncestors(l.source);
+        }
+      });
+    };
 
-      const isHighlighted =
-        highlightedPosts.includes(targetNode.id) ||
-        (activeCategory !== null &&
-          (sourceNode.id === activeCategory || targetNode.id === activeCategory));
+    addDescendants(activeCategory);
+    addAncestors(activeCategory);
+    return set;
+  }, [activeCategory, allNodes, links]);
 
-      // Check if edge should be dimmed based on expandedEdge
-      const isEdgeVisible = isNodeVisible(sourceNode) && isNodeVisible(targetNode);
+  const isNodeActive = useCallback(
+    (nodeId: string) => {
+      if (highlightedPosts.includes(nodeId)) return true;
+      return activeSet?.has(nodeId) ?? false;
+    },
+    [activeSet, highlightedPosts]
+  );
 
-      lines.push(
-        <motion.line
-          key={`${link.source}-${link.target}`}
-          x1={x1}
-          y1={y1}
-          x2={x2}
-          y2={y2}
-          stroke={isHighlighted ? '#00FFC8' : '#00FFC880'}
-          strokeWidth={isHighlighted ? 2 : 1}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isEdgeVisible ? (isHighlighted ? 0.8 : 0.2) : 0.05 }}
-          transition={{ duration: 0.3 }}
-        />
-      );
-    });
+  const isNodeDimmed = useCallback(
+    (nodeId: string) => {
+      if (!activeCategory) return false;
+      if (highlightedPosts.includes(nodeId)) return false;
+      return !activeSet?.has(nodeId);
+    },
+    [activeCategory, activeSet, highlightedPosts]
+  );
 
-    return lines;
-  };
+  const isLinkDimmed = useCallback(
+    (source: string, target: string) => {
+      if (!activeCategory) return false;
+      return !(activeSet?.has(source) && activeSet?.has(target));
+    },
+    [activeCategory, activeSet]
+  );
 
+  const isLinkActive = useCallback(
+    (source: string, target: string) => {
+      if (!activeSet) return false;
+      return activeSet.has(source) && activeSet.has(target);
+    },
+    [activeSet]
+  );
+
+  const nodeMap = useMemo(() => new Map(allNodes.map((n) => [n.id, n])), [allNodes]);
+
+  const [windowSize, setWindowSize] = useState({ w: 1920, h: 1080 });
+  useEffect(() => {
+    setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+    const onResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   return (
-    <div
-      className="fixed inset-0 overflow-hidden"
-      style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
-      onWheel={onWheel}
-      onPointerDown={onPanStart}
-      onPointerMove={onPanMove}
-      onPointerUp={onPanEnd}
-      onPointerLeave={onPanEnd}
-    >
-      {/* SVG for connection lines */}
+    <div className="fixed inset-0 overflow-hidden">
       <svg
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        width={svgWidth}
-        height={svgHeight}
+        ref={svgRef}
+        className="absolute inset-0 w-full h-full"
+        width={windowSize.w}
+        height={windowSize.h}
+        onClick={onBackgroundClick}
       >
-        <g transform={`translate(${svgWidth / 2 + transform.x}, ${svgHeight / 2 + transform.y}) scale(${transform.k})`}>
-          {renderConnections()}
+        <g ref={gRef}>
+          {/* Edges */}
+          {links.map((link) => {
+            const src = nodeMap.get(link.source);
+            const tgt = nodeMap.get(link.target);
+            if (!src || !tgt) return null;
+
+            const active = isLinkActive(link.source, link.target);
+            const dimmed = isLinkDimmed(link.source, link.target);
+            const edgeDepth = link.depth;
+
+            return (
+              <line
+                key={`${link.source}-${link.target}`}
+                x1={src.x || 0}
+                y1={src.y || 0}
+                x2={tgt.x || 0}
+                y2={tgt.y || 0}
+                stroke={edgeDepth === 3 ? '#7dd3c8' : '#00FFC8'}
+                strokeWidth={edgeDepth === 1 ? 1.5 : edgeDepth === 2 ? 1 : 0.7}
+                strokeDasharray={edgeDepth === 3 ? '3 3' : undefined}
+                opacity={dimmed ? 0.05 : active ? 0.6 : 0.25}
+                className="transition-opacity duration-300"
+              />
+            );
+          })}
+
+          {/* Nodes — D3 drag is bound via useEffect, not React pointer handlers */}
+          <g ref={nodesGRef}>
+            {allNodes.map((node) => {
+              const x = node.x || 0;
+              const y = node.y || 0;
+              const w = node.w || 60;
+              const h = node.h || 28;
+              const depth = node.level || 3;
+
+              const active = isNodeActive(node.id);
+              const dimmed = isNodeDimmed(node.id);
+              const highlighted = highlightedPosts.includes(node.id);
+
+              let fill: string, stroke: string, strokeWidth: number;
+              let labelFill: string, fontSize: number, fontWeight: number;
+
+              if (depth === 1) {
+                fill = 'rgba(0,255,200,0.12)';
+                stroke = 'rgba(0,255,200,0.7)';
+                strokeWidth = 1.5;
+                labelFill = '#00FFC8';
+                fontSize = 13;
+                fontWeight = 500;
+              } else if (depth === 2) {
+                fill = 'rgba(167,139,250,0.1)';
+                stroke = 'rgba(167,139,250,0.6)';
+                strokeWidth = 1;
+                labelFill = '#c4b5fd';
+                fontSize = 11;
+                fontWeight = 400;
+              } else {
+                fill = 'rgba(255,255,255,0.04)';
+                stroke = 'rgba(255,255,255,0.2)';
+                strokeWidth = 0.8;
+                labelFill = '#94a3b8';
+                fontSize = 10;
+                fontWeight = 300;
+              }
+
+              const glowFilter =
+                active || highlighted
+                  ? `drop-shadow(0 0 8px ${depth === 1 ? '#00FFC8' : depth === 2 ? '#a78bfa' : '#fff'})`
+                  : undefined;
+
+              return (
+                <g
+                  key={node.id}
+                  className="neural-node cursor-pointer"
+                  data-node-id={node.id}
+                  transform={`translate(${x},${y})`}
+                  opacity={dimmed ? 0.15 : 1}
+                  style={{ transition: 'opacity 0.3s' }}
+                >
+                  <rect
+                    width={w}
+                    height={h}
+                    x={-w / 2}
+                    y={-h / 2}
+                    rx={8}
+                    ry={8}
+                    fill={fill}
+                    stroke={stroke}
+                    strokeWidth={active || highlighted ? 2 : strokeWidth}
+                    filter={glowFilter}
+                  />
+                  {depth === 1 && (
+                    <circle
+                      r={3}
+                      cx={-w / 2 + 12}
+                      cy={0}
+                      fill="#00FFC8"
+                      filter="drop-shadow(0 0 4px #00FFC8)"
+                    />
+                  )}
+                  <text
+                    x={depth === 1 ? 6 : 0}
+                    y={0}
+                    fill={labelFill}
+                    fontSize={fontSize}
+                    fontWeight={fontWeight}
+                    fontFamily="'Noto Sans KR', sans-serif"
+                    dominantBaseline="middle"
+                    textAnchor="middle"
+                    style={{ pointerEvents: 'none', userSelect: 'none' }}
+                  >
+                    {node.label}
+                  </text>
+
+                  {highlighted && (
+                    <rect
+                      width={w + 8}
+                      height={h + 8}
+                      x={-(w + 8) / 2}
+                      y={-(h + 8) / 2}
+                      rx={10}
+                      ry={10}
+                      fill="none"
+                      stroke={depth === 1 ? '#00FFC8' : depth === 2 ? '#a78bfa' : '#fff'}
+                      strokeWidth={1.5}
+                    >
+                      <animate attributeName="opacity" values="0.6;0;0.6" dur="1.5s" repeatCount="indefinite" />
+                    </rect>
+                  )}
+                </g>
+              );
+            })}
+          </g>
         </g>
       </svg>
 
-      {/* Nodes */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          transform: `translate(${svgWidth / 2 + transform.x}px, ${svgHeight / 2 + transform.y}px) scale(${transform.k})`,
-          transformOrigin: '0 0',
-        }}
-      >
-        {allNodes.map((node) => {
-          const isActive = activeCategory === node.id;
-          const isDimmed =
-            activeCategory !== null &&
-            !isActive &&
-            !highlightedPosts.includes(node.id) &&
-            !node.children?.some((c) => c.id === activeCategory);
-          const isHighlighted = highlightedPosts.includes(node.id);
-          const visible = isNodeVisible(node);
-
-          return (
-            <div key={node.id} className="pointer-events-auto">
-              <NetworkNode
-                node={node}
-                isActive={isActive}
-                isDimmed={isDimmed}
-                isHighlighted={isHighlighted}
-                isVisible={visible}
-                onClick={() => onNodeClick(node)}
-                onHover={() => {}}
-                dragHandlers={dragHandlers}
-              />
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Vignette effect */}
+      {/* Vignette */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{

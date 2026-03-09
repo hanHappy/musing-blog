@@ -104,9 +104,9 @@ export function buildNeuralGraph(
     const categorySize = calculateNodeSize(categoryNode);
     Object.assign(categoryNode, categorySize);
 
-    // Find subcategories (level 2)
-    const subcategories = categories.filter(
-      (cat) => cat.parent_id === category.id && cat.level === 2
+    // Find subcategories (level 2) — use tree children directly
+    const subcategories = (category.children || []).filter(
+      (cat) => cat.level === 2
     );
 
     subcategories.forEach((subcat, subIndex) => {

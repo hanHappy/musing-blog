@@ -1,5 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, type RefObject } from 'react';
 import * as d3 from 'd3-force';
+import * as d3Zoom from 'd3-zoom';
+import * as d3Selection from 'd3-selection';
 import type { NeuralNode } from '@/lib/neural-graph-builder';
 
 export interface UseD3ForceSimulationOptions {
@@ -10,7 +12,7 @@ export interface UseD3ForceSimulationOptions {
 }
 
 export interface DragHandlers {
-  onDragStart: (nodeId: string, event: React.PointerEvent) => void;
+  onDragStart: (nodeId: string) => void;
   onDrag: (nodeId: string, x: number, y: number) => void;
   onDragEnd: (nodeId: string) => void;
 }
@@ -18,7 +20,7 @@ export interface DragHandlers {
 export interface ZoomTransform {
   x: number;
   y: number;
-  k: number; // scale
+  k: number;
 }
 
 export interface UseD3ForceSimulationReturn {
@@ -26,11 +28,6 @@ export interface UseD3ForceSimulationReturn {
   simulation: d3.Simulation<NeuralNode, undefined> | null;
   dragHandlers: DragHandlers;
   transform: ZoomTransform;
-  onWheel: (event: React.WheelEvent) => void;
-  onPanStart: (event: React.PointerEvent) => void;
-  onPanMove: (event: React.PointerEvent) => void;
-  onPanEnd: () => void;
-  isPanning: boolean;
 }
 
 interface D3Link {
@@ -40,86 +37,72 @@ interface D3Link {
 }
 
 /**
- * Custom hook for D3 force simulation
- * D3 handles physics calculations, React handles rendering
+ * D3 force simulation + d3.zoom() bound directly to SVG.
+ * Force operates in (0,0)-centered space; consumer translates by (W/2, H/2).
+ * Zoom/pan is handled by D3 (non-passive wheel listener, smooth inertia).
  */
 export function useD3ForceSimulation(
   initialNodes: NeuralNode[],
   links: D3Link[],
+  svgRef: RefObject<SVGSVGElement | null>,
+  gRef: RefObject<SVGGElement | null>,
   options: UseD3ForceSimulationOptions = {}
 ): UseD3ForceSimulationReturn {
-  const { width = 1920, height = 1080, centerX = 0, centerY = 0 } = options;
+  const { centerX = 0, centerY = 0 } = options;
 
   const [nodes, setNodes] = useState<NeuralNode[]>(initialNodes);
+  const [transform, setTransform] = useState<ZoomTransform>({ x: 0, y: 0, k: 1 });
   const simulationRef = useRef<d3.Simulation<NeuralNode, undefined> | null>(null);
   const rafRef = useRef<number | null>(null);
   const nodesRef = useRef<NeuralNode[]>(initialNodes);
 
-  // Zoom/Pan state
-  const [transform, setTransform] = useState<ZoomTransform>({ x: 0, y: 0, k: 1 });
-  const [isPanning, setIsPanning] = useState(false);
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-
+  // Force simulation
   useEffect(() => {
-    // Clone nodes to avoid mutating props
     const clonedNodes = initialNodes.map((node) => ({ ...node }));
 
-    // Initialize positions if not set
     clonedNodes.forEach((node) => {
       if (node.x === undefined || node.y === undefined) {
-        node.x = (node.position?.x || 0) + centerX + width / 2;
-        node.y = (node.position?.y || 0) + centerY + height / 2;
+        node.x = (node.position?.x || 0) + centerX;
+        node.y = (node.position?.y || 0) + centerY;
       }
     });
 
-    // Create simulation
+    // Clone links — d3.forceLink mutates .source/.target from string to object refs
+    const clonedLinks = links.map((l) => ({ ...l }));
+
     const simulation = d3
       .forceSimulation<NeuralNode>(clonedNodes)
       .force(
         'link',
         d3
-          .forceLink<NeuralNode, D3Link>(links)
+          .forceLink<NeuralNode, D3Link>(clonedLinks)
           .id((d) => d.id)
-          .distance((d) => {
-            if (d.depth === 1) return 120;
-            if (d.depth === 2) return 100;
-            return 80;
-          })
+          .distance((d) => (d.depth === 1 ? 120 : d.depth === 2 ? 100 : 80))
           .strength(0.6)
       )
       .force(
         'charge',
-        d3.forceManyBody<NeuralNode>().strength((d) => {
-          if (d.level === 1) return -600;
-          if (d.level === 2) return -300;
-          return -150;
-        })
+        d3.forceManyBody<NeuralNode>().strength((d) =>
+          d.level === 1 ? -600 : d.level === 2 ? -300 : -150
+        )
       )
       .force(
         'collide',
-        d3
-          .forceCollide<NeuralNode>()
-          .radius((d) => d.r || 20)
-          .strength(0.8)
+        d3.forceCollide<NeuralNode>().radius((d) => d.r || 20).strength(0.8)
       )
       .force(
         'radial',
-        d3
-          .forceRadial<NeuralNode>(280, centerX + width / 2, centerY + height / 2)
+        d3.forceRadial<NeuralNode>(280, centerX, centerY)
           .strength((d) => (d.level === 1 ? 0.5 : 0))
       )
-      .force(
-        'center',
-        d3.forceCenter(centerX + width / 2, centerY + height / 2).strength(0.03)
-      )
+      .force('center', d3.forceCenter(centerX, centerY).strength(0.03))
       .alphaDecay(0.025)
       .velocityDecay(0.35);
 
     simulationRef.current = simulation;
 
-    // Throttle tick updates using requestAnimationFrame
     let lastUpdate = 0;
-    const throttleInterval = 1000 / 60; // 60fps
+    const throttleInterval = 1000 / 60;
 
     const onTick = () => {
       const now = Date.now();
@@ -128,7 +111,6 @@ export function useD3ForceSimulation(
         nodesRef.current = clonedNodes;
         setNodes([...clonedNodes]);
       }
-
       if (simulation.alpha() > simulation.alphaMin()) {
         rafRef.current = requestAnimationFrame(onTick);
       }
@@ -141,7 +123,6 @@ export function useD3ForceSimulation(
     });
 
     simulation.on('end', () => {
-      // Final update when simulation ends
       nodesRef.current = clonedNodes;
       setNodes([...clonedNodes]);
       if (rafRef.current) {
@@ -152,95 +133,80 @@ export function useD3ForceSimulation(
 
     return () => {
       simulation.stop();
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [initialNodes, links, width, height, centerX, centerY]);
+  }, [initialNodes, links, centerX, centerY]);
+
+  // D3 zoom — bound directly to SVG element (non-passive, smooth)
+  useEffect(() => {
+    const svgEl = svgRef.current;
+    const gEl = gRef.current;
+    if (!svgEl || !gEl) return;
+
+    const svg = d3Selection.select(svgEl);
+    const g = d3Selection.select(gEl);
+
+    const W = svgEl.clientWidth || window.innerWidth;
+    const H = svgEl.clientHeight || window.innerHeight;
+
+    // Set initial transform to center the (0,0)-based graph
+    const initialTransform = d3Zoom.zoomIdentity.translate(W / 2, H / 2);
+
+    const zoom = d3Zoom.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.3, 2.5])
+      .on('zoom', (e) => {
+        g.attr('transform', e.transform.toString());
+        setTransform({ x: e.transform.x, y: e.transform.y, k: e.transform.k });
+      });
+
+    svg.call(zoom);
+    svg.call(zoom.transform, initialTransform);
+
+    // Update on resize
+    const onResize = () => {
+      const nW = window.innerWidth;
+      const nH = window.innerHeight;
+      svgEl.setAttribute('width', String(nW));
+      svgEl.setAttribute('height', String(nH));
+      // Re-center
+      const newTransform = d3Zoom.zoomIdentity.translate(nW / 2, nH / 2);
+      svg.call(zoom.transform, newTransform);
+    };
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      svg.on('.zoom', null);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [svgRef, gRef]);
 
   // Drag handlers
   const dragHandlers: DragHandlers = {
     onDragStart: (nodeId: string) => {
       const simulation = simulationRef.current;
       if (!simulation) return;
-
-      // Reheat simulation
       simulation.alphaTarget(0.15).restart();
-
-      // Find node and fix position
       const node = nodesRef.current.find((n) => n.id === nodeId);
-      if (node) {
-        node.fx = node.x;
-        node.fy = node.y;
-      }
+      if (node) { node.fx = node.x; node.fy = node.y; }
     },
-
-    onDrag: (nodeId: string, clientX: number, clientY: number) => {
+    onDrag: (nodeId: string, x: number, y: number) => {
       const node = nodesRef.current.find((n) => n.id === nodeId);
       if (node) {
-        node.fx = clientX;
-        node.fy = clientY;
-        // Force immediate update
+        node.fx = x;
+        node.fy = y;
         setNodes([...nodesRef.current]);
       }
     },
-
     onDragEnd: (nodeId: string) => {
       const simulation = simulationRef.current;
       if (!simulation) return;
-
       simulation.alphaTarget(0);
-
       const node = nodesRef.current.find((n) => n.id === nodeId);
-      if (node) {
-        // depth 3 (post) nodes stay fixed after drag
-        // depth 1, 2 nodes are released
-        if (node.level !== 3) {
-          node.fx = null;
-          node.fy = null;
-        }
+      if (node && node.level !== 3) {
+        node.fx = null;
+        node.fy = null;
       }
     },
-  };
-
-  // Zoom handler
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = -e.deltaY * 0.001;
-    const newK = Math.max(0.3, Math.min(2.5, transform.k * (1 + delta)));
-
-    // Zoom towards mouse position
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const mouseX = e.clientX - rect.left - rect.width / 2;
-    const mouseY = e.clientY - rect.top - rect.height / 2;
-
-    setTransform({
-      x: transform.x - mouseX * (newK - transform.k) / transform.k,
-      y: transform.y - mouseY * (newK - transform.k) / transform.k,
-      k: newK,
-    });
-  };
-
-  // Pan handlers
-  const handlePanStart = (e: React.PointerEvent) => {
-    setIsPanning(true);
-    setPanStart({ x: e.clientX, y: e.clientY });
-  };
-
-  const handlePanMove = (e: React.PointerEvent) => {
-    if (!isPanning) return;
-    const dx = e.clientX - panStart.x;
-    const dy = e.clientY - panStart.y;
-    setTransform({
-      ...transform,
-      x: transform.x + dx,
-      y: transform.y + dy,
-    });
-    setPanStart({ x: e.clientX, y: e.clientY });
-  };
-
-  const handlePanEnd = () => {
-    setIsPanning(false);
   };
 
   return {
@@ -248,10 +214,5 @@ export function useD3ForceSimulation(
     simulation: simulationRef.current,
     dragHandlers,
     transform,
-    onWheel: handleWheel,
-    onPanStart: handlePanStart,
-    onPanMove: handlePanMove,
-    onPanEnd: handlePanEnd,
-    isPanning,
   };
 }
