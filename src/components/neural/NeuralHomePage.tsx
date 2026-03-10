@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { NeuralNetwork } from './NeuralNetwork';
 import { CenterCard } from './CenterCard';
-import { PostModal } from './PostModal';
 import type { NeuralGraphData, NeuralNode } from '@/lib/neural-graph-builder';
 
 interface NeuralHomePageProps {
@@ -11,14 +11,14 @@ interface NeuralHomePageProps {
 }
 
 export function NeuralHomePage({ initialGraph }: NeuralHomePageProps) {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [highlightedPosts, setHighlightedPosts] = useState<string[]>([]);
-  const [selectedPostSlug, setSelectedPostSlug] = useState<string | null>(null);
 
   const handleNodeClick = (node: NeuralNode) => {
     if (node.type === 'post') {
       if (node.slug) {
-        setSelectedPostSlug(node.slug);
+        router.push(`/posts/${node.slug}`);
       }
     } else if (node.type === 'category' || node.type === 'subcategory') {
       if (activeCategory === node.id) {
@@ -30,7 +30,7 @@ export function NeuralHomePage({ initialGraph }: NeuralHomePageProps) {
   };
 
   const handleSlugClick = (slug: string) => {
-    setSelectedPostSlug(slug);
+    router.push(`/posts/${slug}`);
   };
 
   const handleHighlightPosts = (slugs: string[]) => {
@@ -66,8 +66,6 @@ export function NeuralHomePage({ initialGraph }: NeuralHomePageProps) {
         onSlugClick={handleSlugClick}
         onHighlightPosts={handleHighlightPosts}
       />
-
-      <PostModal slug={selectedPostSlug} onClose={() => setSelectedPostSlug(null)} />
     </div>
   );
 }
