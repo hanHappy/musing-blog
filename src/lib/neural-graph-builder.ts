@@ -186,19 +186,68 @@ export function buildNeuralGraph(
         (cat) => cat.level === 3
       );
 
-      // Collect post IDs for level-3 categories
-      const level3CatIds = new Set(level3Categories.map((c) => c.id));
+      // Create actual nodes for each level-3 category and attach their posts
+      level3Categories.forEach((l3cat, l3Index) => {
+        const l3Angle =
+          subAngle + ((l3Index - level3Categories.length / 2) * Math.PI) / 8;
+        const l3Radius = subRadius + 120;
+        const l3X = Math.cos(l3Angle) * l3Radius;
+        const l3Y = Math.sin(l3Angle) * l3Radius;
 
-      // Find posts for this subcategory (directly assigned or via level-3 children)
-      const subcatPosts = posts.filter(
-        (post) =>
-          post.published &&
-          (post.category_id === subcat.id || level3CatIds.has(post.category_id || ''))
+        const l3Node: NeuralNode = {
+          id: l3cat.id,
+          type: 'subcategory',
+          label: l3cat.name,
+          slug: l3cat.slug,
+          position: { x: l3X, y: l3Y },
+          categoryId: l3cat.id,
+          level: 3,
+          children: [],
+        };
+        const l3Size = calculateNodeSize(l3Node);
+        Object.assign(l3Node, l3Size);
+
+        // Find posts directly under this level-3 category
+        const l3Posts = posts.filter(
+          (post) => post.published && post.category_id === l3cat.id
+        );
+
+        l3Posts.forEach((post, postIndex) => {
+          const postAngle =
+            l3Angle + ((postIndex - l3Posts.length / 2) * Math.PI) / 12;
+          const postRadius = l3Radius + 120;
+          const postX = Math.cos(postAngle) * postRadius;
+          const postY = Math.sin(postAngle) * postRadius;
+
+          const postNode: NeuralNode = {
+            id: post.id,
+            type: 'post',
+            label: post.title,
+            slug: post.slug,
+            position: { x: postX, y: postY },
+            categoryId: post.category_id || undefined,
+            level: 3,
+          };
+          const postSize = calculateNodeSize(postNode);
+          Object.assign(postNode, postSize);
+
+          l3Node.children?.push(postNode);
+          nodeMap.set(post.id, postNode);
+          postMap.set(post.slug, postNode);
+        });
+
+        subcatNode.children?.push(l3Node);
+        nodeMap.set(l3cat.id, l3Node);
+      });
+
+      // Find posts directly under level-2 (not via a level-3 category)
+      const directSubcatPosts = posts.filter(
+        (post) => post.published && post.category_id === subcat.id
       );
 
-      subcatPosts.forEach((post, postIndex) => {
+      directSubcatPosts.forEach((post, postIndex) => {
         const postAngle =
-          subAngle + ((postIndex - subcatPosts.length / 2) * Math.PI) / 12;
+          subAngle + ((postIndex - directSubcatPosts.length / 2) * Math.PI) / 12;
         const postRadius = subRadius + 120;
         const postX = Math.cos(postAngle) * postRadius;
         const postY = Math.sin(postAngle) * postRadius;

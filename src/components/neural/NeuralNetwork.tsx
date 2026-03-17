@@ -195,7 +195,7 @@ export function NeuralNetwork({
                 y1={src.y || 0}
                 x2={tgt.x || 0}
                 y2={tgt.y || 0}
-                stroke={edgeDepth === 3 ? '#7dd3c8' : '#00FFC8'}
+                stroke={edgeDepth === 3 ? '#fde047' : '#00FFC8'}
                 strokeWidth={edgeDepth === 1 ? 1.5 : edgeDepth === 2 ? 1 : 0.7}
                 strokeDasharray={edgeDepth === 3 ? '3 3' : undefined}
                 opacity={dimmed ? 0.05 : active ? 0.6 : 0.25}
@@ -234,18 +234,25 @@ export function NeuralNetwork({
                 labelFill = '#c4b5fd';
                 fontSize = 11;
                 fontWeight = 400;
+              } else if (depth === 3 && node.type === 'subcategory') {
+                fill = 'rgba(250,204,21,0.1)';
+                stroke = 'rgba(250,204,21,0.6)';
+                strokeWidth = 1;
+                labelFill = '#fde047';
+                fontSize = 10;
+                fontWeight = 400;
               } else {
-                fill = 'rgba(255,255,255,0.04)';
-                stroke = 'rgba(255,255,255,0.2)';
+                fill = 'rgba(255,255,255,0.06)';
+                stroke = 'rgba(255,255,255,0.25)';
                 strokeWidth = 0.8;
-                labelFill = '#94a3b8';
+                labelFill = '#b0bec5';
                 fontSize = 10;
                 fontWeight = 300;
               }
 
               const glowFilter =
                 active || highlighted
-                  ? `drop-shadow(0 0 8px ${depth === 1 ? '#00FFC8' : depth === 2 ? '#a78bfa' : '#fff'})`
+                  ? `drop-shadow(0 0 8px ${depth === 1 ? '#00FFC8' : depth === 2 ? '#a78bfa' : depth === 3 && node.type === 'subcategory' ? '#facc15' : '#fff'})`
                   : undefined;
 
               return (

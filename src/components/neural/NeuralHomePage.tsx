@@ -14,6 +14,7 @@ export function NeuralHomePage({ initialGraph }: NeuralHomePageProps) {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [highlightedPosts, setHighlightedPosts] = useState<string[]>([]);
+  const [isChatCollapsed, setIsChatCollapsed] = useState(false);
 
   const handleNodeClick = (node: NeuralNode) => {
     if (node.type === 'post') {
@@ -65,6 +66,9 @@ export function NeuralHomePage({ initialGraph }: NeuralHomePageProps) {
       <CenterCard
         onSlugClick={handleSlugClick}
         onHighlightPosts={handleHighlightPosts}
+        isCollapsed={isChatCollapsed}
+        onCollapse={() => setIsChatCollapsed(true)}
+        onExpand={() => setIsChatCollapsed(false)}
       />
     </div>
   );

@@ -14,13 +14,15 @@ interface Message {
 interface CenterCardProps {
   onSlugClick: (slug: string) => void;
   onHighlightPosts: (slugs: string[]) => void;
+  isCollapsed: boolean;
+  onCollapse: () => void;
+  onExpand: () => void;
 }
 
-export function CenterCard({ onSlugClick, onHighlightPosts }: CenterCardProps) {
+export function CenterCard({ onSlugClick, onHighlightPosts, isCollapsed, onCollapse, onExpand }: CenterCardProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -87,13 +89,20 @@ export function CenterCard({ onSlugClick, onHighlightPosts }: CenterCardProps) {
   // 접힌 상태에서 input 클릭 시 펼치기
   const handleInputFocus = () => {
     if (isCollapsed) {
-      setIsCollapsed(false);
+      onExpand();
     }
   };
 
   return (
+    <>
+    {!isCollapsed && (
+      <div
+        className="fixed inset-0 z-40"
+        onClick={onCollapse}
+      />
+    )}
     <div
-      className={`fixed transition-all duration-500 ease-in-out ${
+      className={`fixed z-50 transition-all duration-500 ease-in-out ${
         isCollapsed
           ? 'bottom-8 left-1/2 -translate-x-1/2 w-[600px]'
           : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%]'
@@ -109,7 +118,7 @@ export function CenterCard({ onSlugClick, onHighlightPosts }: CenterCardProps) {
           {/* Collapse/Expand button - only show when expanded */}
           {!isCollapsed && (
             <button
-              onClick={() => setIsCollapsed(true)}
+              onClick={onCollapse}
               className="absolute top-4 right-4 z-20 p-2 rounded-lg hover:bg-[rgba(0,255,200,0.1)] transition-colors"
               aria-label="Minimize chat"
             >
@@ -142,7 +151,7 @@ export function CenterCard({ onSlugClick, onHighlightPosts }: CenterCardProps) {
             {/* Links */}
             <div className="flex gap-4">
               <a
-                href="https://github.com"
+                href="https://github.com/hanHappy"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-sm hover:text-[var(--neural-accent)] transition-colors"
@@ -274,5 +283,6 @@ export function CenterCard({ onSlugClick, onHighlightPosts }: CenterCardProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }
