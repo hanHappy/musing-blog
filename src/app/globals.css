@@ -705,6 +705,71 @@
     }
   }
 
+  /* Force neural/dark colors for post detail page (always dark bg) */
+  .neural-post-detail .post-prose {
+    color: var(--neural-text-primary);
+  }
+
+  .neural-post-detail .post-prose h1,
+  .neural-post-detail .post-prose h2,
+  .neural-post-detail .post-prose h3,
+  .neural-post-detail .post-prose h4,
+  .neural-post-detail .post-prose h5,
+  .neural-post-detail .post-prose h6 {
+    color: var(--neural-text-primary);
+  }
+
+  .neural-post-detail .post-prose p,
+  .neural-post-detail .post-prose li {
+    color: var(--neural-text-muted);
+  }
+
+  .neural-post-detail .post-prose h2 {
+    color: var(--neural-accent);
+  }
+
+  .neural-post-detail .post-prose a {
+    color: var(--neural-accent);
+  }
+
+  .neural-post-detail .post-prose blockquote {
+    border-left-color: var(--neural-accent);
+    color: var(--neural-text-muted);
+  }
+
+  .neural-post-detail .post-prose code {
+    color: var(--neural-accent);
+    background-color: rgba(0, 255, 200, 0.1);
+  }
+
+  .neural-post-detail .post-prose pre {
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 255, 200, 0.2);
+  }
+
+  .neural-post-detail .post-prose pre code {
+    color: var(--neural-text-primary);
+    background-color: transparent;
+  }
+
+  .neural-post-detail .post-prose strong {
+    color: var(--neural-text-primary);
+  }
+
+  .neural-post-detail .post-prose table th {
+    background-color: rgba(0, 255, 200, 0.1);
+    color: var(--neural-text-primary);
+  }
+
+  .neural-post-detail .post-prose table td {
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--neural-text-muted);
+  }
+
+  .neural-post-detail .post-prose hr {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
   /* Neural Network Styles */
   .neural-bg {
     background: var(--neural-bg);

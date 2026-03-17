@@ -16,7 +16,8 @@ export default function LayoutContent({
   const hideLayout =
     pathname === '/' ||
     pathname?.startsWith('/login') ||
-    pathname?.startsWith('/admin');
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/posts/');
 
   if (hideLayout) {
     return <>{children}</>;
