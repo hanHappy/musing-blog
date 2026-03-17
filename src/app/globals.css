@@ -721,7 +721,7 @@
 
   .neural-post-detail .post-prose p,
   .neural-post-detail .post-prose li {
-    color: var(--neural-text-muted);
+    color: var(--neural-text-primary);
   }
 
   .neural-post-detail .post-prose h2 {
@@ -734,7 +734,7 @@
 
   .neural-post-detail .post-prose blockquote {
     border-left-color: var(--neural-accent);
-    color: var(--neural-text-muted);
+    color: var(--neural-text-primary);
   }
 
   .neural-post-detail .post-prose code {
@@ -763,7 +763,7 @@
 
   .neural-post-detail .post-prose table td {
     border-color: rgba(255, 255, 255, 0.1);
-    color: var(--neural-text-muted);
+    color: var(--neural-text-primary);
   }
 
   .neural-post-detail .post-prose hr {
