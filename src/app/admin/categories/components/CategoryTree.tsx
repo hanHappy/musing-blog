@@ -11,6 +11,7 @@ import {
   DragOverlay,
   type DragStartEvent,
   type DragEndEvent,
+  type DragOverEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -27,6 +28,7 @@ interface CategoryTreeProps {
   onDelete: (category: Category) => void;
   onAddChild: (parentId: string) => void;
   onReorder: (updates: Array<{ id: string; parent_id: string | null; level: 1 | 2 | 3; order: number }>) => void;
+  onInlineRename: (id: string, newName: string) => void;
 }
 
 function flattenTree(
@@ -58,9 +60,11 @@ export default function CategoryTree({
   onDelete,
   onAddChild,
   onReorder,
+  onInlineRename,
 }: CategoryTreeProps) {
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -90,8 +94,13 @@ export default function CategoryTree({
     setActiveId(String(event.active.id));
   };
 
+  const handleDragOver = (event: DragOverEvent) => {
+    setOverId(event.over ? String(event.over.id) : null);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     setActiveId(null);
+    setOverId(null);
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -155,6 +164,7 @@ export default function CategoryTree({
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <SortableContext
@@ -170,6 +180,8 @@ export default function CategoryTree({
             onEdit={onEdit}
             onDelete={onDelete}
             onAddChild={onAddChild}
+            onInlineRename={onInlineRename}
+            isOver={overId === node.id}
           />
         ))}
       </SortableContext>

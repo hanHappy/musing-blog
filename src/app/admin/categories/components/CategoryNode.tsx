@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Category } from '@/types/database';
@@ -27,6 +28,8 @@ interface CategoryNodeProps {
   onEdit: (category: Category) => void;
   onDelete: (category: Category) => void;
   onAddChild: (parentId: string) => void;
+  onInlineRename: (id: string, newName: string) => void;
+  isOver: boolean;
 }
 
 export default function CategoryNode({
@@ -36,7 +39,13 @@ export default function CategoryNode({
   onEdit,
   onDelete,
   onAddChild,
+  onInlineRename,
+  isOver,
 }: CategoryNodeProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const {
     attributes,
     listeners,
@@ -55,8 +64,40 @@ export default function CategoryNode({
 
   const cat = node.category;
 
+  function handleDoubleClick() {
+    if (isDragging) return;
+    setEditValue(cat.name);
+    setIsEditing(true);
+  }
+
+  function commitEdit() {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== cat.name) {
+      onInlineRename(cat.id, trimmed);
+    }
+    setIsEditing(false);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      commitEdit();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+    }
+  }
+
   return (
     <div ref={setNodeRef} style={style}>
+      {isOver && (
+        <div
+          style={{
+            height: 2,
+            background: 'var(--color-primary)',
+            borderRadius: 1,
+            marginBottom: 2,
+          }}
+        />
+      )}
       <div
         className="card p-3 mb-2 flex items-center gap-3 transition-all"
         style={{
@@ -90,9 +131,32 @@ export default function CategoryNode({
 
         {/* Category info */}
         <div className="flex-1 min-w-0">
-          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {cat.name}
-          </span>
+          {isEditing ? (
+            <input
+              ref={inputRef}
+              autoFocus
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={commitEdit}
+              onKeyDown={handleKeyDown}
+              className="font-semibold bg-transparent border-b outline-none"
+              style={{
+                color: 'var(--text-primary)',
+                borderColor: 'var(--color-primary)',
+                minWidth: 0,
+                width: 'auto',
+              }}
+            />
+          ) : (
+            <span
+              className="font-semibold"
+              style={{ color: 'var(--text-primary)', cursor: 'pointer' }}
+              onDoubleClick={handleDoubleClick}
+              title="Double-click to rename"
+            >
+              {cat.name}
+            </span>
+          )}
           <span className="text-sm ml-2" style={{ color: 'var(--text-muted)' }}>
             /{cat.slug}
           </span>
