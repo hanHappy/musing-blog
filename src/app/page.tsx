@@ -132,8 +132,59 @@ export default async function Home() {
     posts = mock.posts;
   }
 
+  // Compute tag-based post-to-post links
+  let tagPostLinks: { source: string; target: string; sharedCount: number }[] = [];
+  try {
+    const supabase = await createClient();
+    const { data: postTags } = await supabase
+      .from('post_tags')
+      .select('post_id, tag_id');
+
+    if (postTags && postTags.length > 0) {
+      // Only include published post IDs
+      const publishedIds = new Set(posts.filter(p => p.published).map(p => p.id));
+
+      // Group tags by post
+      const tagsByPost = new Map<string, string[]>();
+      for (const pt of postTags) {
+        if (!publishedIds.has(pt.post_id)) continue;
+        const tags = tagsByPost.get(pt.post_id) || [];
+        tags.push(pt.tag_id);
+        tagsByPost.set(pt.post_id, tags);
+      }
+
+      // Invert: group posts by tag
+      const postsByTag = new Map<string, string[]>();
+      for (const [postId, tags] of tagsByPost) {
+        for (const tagId of tags) {
+          const ps = postsByTag.get(tagId) || [];
+          ps.push(postId);
+          postsByTag.set(tagId, ps);
+        }
+      }
+
+      // Count shared tags for each post pair
+      const pairMap = new Map<string, number>();
+      for (const postIds of postsByTag.values()) {
+        for (let i = 0; i < postIds.length; i++) {
+          for (let j = i + 1; j < postIds.length; j++) {
+            const key = [postIds[i], postIds[j]].sort().join('::');
+            pairMap.set(key, (pairMap.get(key) || 0) + 1);
+          }
+        }
+      }
+
+      tagPostLinks = Array.from(pairMap.entries()).map(([key, count]) => {
+        const [source, target] = key.split('::');
+        return { source, target, sharedCount: count };
+      });
+    }
+  } catch (error) {
+    console.error('Failed to fetch post_tags for tag links:', error);
+  }
+
   const categoryTree = buildCategoryTree(categories);
   const neuralGraph = buildNeuralGraph(categoryTree, posts);
 
-  return <NeuralHomePage initialGraph={neuralGraph} />;
+  return <NeuralHomePage initialGraph={neuralGraph} tagPostLinks={tagPostLinks} />;
 }

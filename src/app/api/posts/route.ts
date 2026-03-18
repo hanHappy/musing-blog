@@ -18,7 +18,8 @@ export async function GET(request: Request) {
     .from('posts')
     .select(`
       *,
-      category:categories(*)
+      category:categories(*),
+      post_tags(tag_id, tags:tags(*))
     `)
     .order('created_at', { ascending: false });
 
@@ -89,6 +90,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Insert post tags if provided
+  if (body.tag_ids && body.tag_ids.length > 0) {
+    const postTags = body.tag_ids.map((tag_id) => ({
+      post_id: data.id,
+      tag_id,
+    }));
+    const { error: tagError } = await supabase
+      .from('post_tags')
+      .insert(postTags);
+    if (tagError) {
+      console.error('Failed to insert post tags:', tagError);
+    }
+  }
+
   // Generate embedding if post is published
   if (data.published) {
     try {
@@ -116,7 +131,7 @@ export async function PATCH(request: Request) {
   const supabase = await createClient();
   const body: UpdatePostRequest = await request.json();
 
-  const { id, slug: _slug, ...updates } = body;
+  const { id, slug: _slug, tag_ids, ...updates } = body;
 
   // 2. Validate required fields
   if (!id) {
@@ -143,7 +158,26 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // 5. Regenerate embedding if content changed and post is published
+  // 5. Update post tags if provided
+  if (tag_ids !== undefined) {
+    // Delete existing tags for this post
+    await supabase.from('post_tags').delete().eq('post_id', id);
+    // Insert new tags
+    if (tag_ids.length > 0) {
+      const postTags = tag_ids.map((tag_id) => ({
+        post_id: id,
+        tag_id,
+      }));
+      const { error: tagError } = await supabase
+        .from('post_tags')
+        .insert(postTags);
+      if (tagError) {
+        console.error('Failed to update post tags:', tagError);
+      }
+    }
+  }
+
+  // 6. Regenerate embedding if content changed and post is published
   if ((updates.content || updates.title) && data.published) {
     try {
       await generateEmbedding(data.id, data.title, data.content);

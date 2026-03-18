@@ -7,6 +7,7 @@ const navItems = [
   { name: 'Dashboard', href: '/admin', icon: '📊' },
   { name: 'Posts', href: '/admin/posts', icon: '📝' },
   { name: 'Categories', href: '/admin/categories', icon: '📁' },
+  { name: 'Tags', href: '/admin/tags', icon: '🏷️' },
   { name: 'Media', href: '/admin/media', icon: '🖼️' },
   { name: 'RAG Settings', href: '/admin/rag', icon: '🤖' },
   { name: 'Blog Settings', href: '/admin/settings', icon: '⚙️' },

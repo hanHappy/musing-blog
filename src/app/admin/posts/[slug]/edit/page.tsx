@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import { createClient, isAdmin } from '@/lib/supabase-server';
 import { EditPostForm } from './EditPostForm';
-import type { Category, PostWithCategory } from '@/types/database';
+import type { Category, PostWithCategoryAndTags } from '@/types/database';
 
 interface EditPostPageProps {
   params: Promise<{
@@ -25,7 +25,8 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
     .from('posts')
     .select(`
       *,
-      category:categories(*)
+      category:categories(*),
+      post_tags(tag_id, tags:tags(*))
     `)
     .eq('slug', slug)
     .single();
@@ -59,7 +60,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
       </h1>
 
       <EditPostForm
-        post={post as PostWithCategory}
+        post={post as PostWithCategoryAndTags}
         categories={flattenCategories(categories)}
       />
     </div>

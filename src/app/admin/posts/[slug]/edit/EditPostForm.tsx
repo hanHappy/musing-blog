@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import type { Category, PostWithCategory } from '@/types/database';
+import type { Category, PostWithCategoryAndTags } from '@/types/database';
+import TagSelector from '@/components/admin/TagSelector';
 
 // Dynamically import markdown editor to avoid SSR issues
 const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
 
 interface EditPostFormProps {
-  post: PostWithCategory;
+  post: PostWithCategoryAndTags;
   categories: Category[];
 }
 
@@ -20,6 +21,9 @@ export function EditPostForm({ post, categories }: EditPostFormProps) {
   const [content, setContent] = useState(post.content);
   const [excerpt, setExcerpt] = useState(post.excerpt || '');
   const [categoryId, setCategoryId] = useState(post.category_id || '');
+  const [tagIds, setTagIds] = useState<string[]>(
+    (post.post_tags || []).map((pt) => pt.tag_id)
+  );
   const [published, setPublished] = useState(post.published);
   const [loading, setLoading] = useState(false);
 
@@ -38,6 +42,7 @@ export function EditPostForm({ post, categories }: EditPostFormProps) {
           excerpt: excerpt || null,
           category_id: categoryId || null,
           published,
+          tag_ids: tagIds,
         }),
       });
 
@@ -147,6 +152,9 @@ export function EditPostForm({ post, categories }: EditPostFormProps) {
           ))}
         </select>
       </div>
+
+      {/* Tags */}
+      <TagSelector selectedTagIds={tagIds} onChange={setTagIds} />
 
       {/* Excerpt */}
       <div>

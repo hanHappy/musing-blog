@@ -43,13 +43,63 @@ export interface PostEmbedding {
   created_at: string;
 }
 
+export interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PostTag {
+  post_id: string;
+  tag_id: string;
+  created_at: string;
+}
+
+export interface TagRelation {
+  tag_a: string;
+  tag_b: string;
+  strength: number;
+  updated_at: string;
+}
+
 // Extended types with relations
 export interface PostWithCategory extends Post {
   category: Category | null;
 }
 
+export interface PostWithCategoryAndTags extends PostWithCategory {
+  post_tags?: { tag_id: string; tags: Tag }[];
+}
+
 export interface CategoryWithChildren extends Category {
   children?: CategoryWithChildren[];
+}
+
+export interface TagWithPostCount extends Tag {
+  post_count: number;
+}
+
+// Tag graph types for D3 visualization
+export interface TagGraphNode {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+  post_count: number;
+}
+
+export interface TagGraphEdge {
+  source: string;
+  target: string;
+  strength: number;
+}
+
+export interface TagGraphData {
+  nodes: TagGraphNode[];
+  edges: TagGraphEdge[];
 }
 
 // API request/response types
@@ -60,10 +110,25 @@ export interface CreatePostRequest {
   excerpt?: string;
   category_id?: string;
   published?: boolean;
+  tag_ids?: string[];
 }
 
 export interface UpdatePostRequest extends Partial<CreatePostRequest> {
   id: string;
+  tag_ids?: string[];
+}
+
+export interface CreateTagRequest {
+  name: string;
+  slug: string;
+  color?: string;
+}
+
+export interface UpdateTagRequest {
+  id: string;
+  name?: string;
+  slug?: string;
+  color?: string;
 }
 
 export interface CreateCategoryRequest {

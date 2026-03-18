@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import type { Category, CategoryWithChildren } from '@/types/database';
+import TagSelector from '@/components/admin/TagSelector';
 
 // Dynamically import markdown editor to avoid SSR issues
 const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
@@ -15,6 +16,7 @@ export default function NewPostPage() {
   const [content, setContent] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [published, setPublished] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
@@ -63,6 +65,7 @@ export default function NewPostPage() {
           excerpt,
           category_id: categoryId || null,
           published,
+          tag_ids: tagIds,
         }),
       });
 
@@ -183,6 +186,9 @@ export default function NewPostPage() {
             ))}
           </select>
         </div>
+
+        {/* Tags */}
+        <TagSelector selectedTagIds={tagIds} onChange={setTagIds} />
 
         {/* Excerpt */}
         <div>
