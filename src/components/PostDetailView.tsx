@@ -1,17 +1,26 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import TableOfContents from '@/components/TableOfContents';
+
+interface PostTag {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+}
 
 interface PostData {
   title: string;
   slug: string;
   content: string;
   created_at: string;
+  tags?: PostTag[];
 }
 
 interface RelatedPost {
@@ -60,6 +69,34 @@ export default function PostDetailView({
 
   const handleNavigate = (slug: string) => {
     router.push(`/posts/${slug}`);
+  };
+
+  const extractText = (node: ReactNode): string => {
+    if (typeof node === 'string') return node;
+    if (typeof node === 'number') return String(node);
+    if (Array.isArray(node)) return node.map(extractText).join('');
+    if (node && typeof node === 'object' && 'props' in node) {
+      return extractText((node as React.ReactElement<{ children?: ReactNode }>).props.children);
+    }
+    return '';
+  };
+
+  const generateHeadingId = (children: ReactNode): string => {
+    return extractText(children)
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9가-힣ㄱ-ㅎㅏ-ㅣ\w\s-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  };
+
+  const markdownComponents: Components = {
+    h2: ({ children }) => (
+      <h2 id={generateHeadingId(children)}>{children}</h2>
+    ),
+    h3: ({ children }) => (
+      <h3 id={generateHeadingId(children)}>{children}</h3>
+    ),
   };
 
   return (
@@ -122,7 +159,7 @@ export default function PostDetailView({
           <ArrowLeft size={20} style={{ color: 'var(--neural-accent)' }} />
           <span
             style={{
-              color: 'var(--neural-text-primary)',
+              color: 'var(--neural-text-muted)',
               fontFamily: 'var(--font-space-grotesk), sans-serif',
             }}
           >
@@ -193,16 +230,43 @@ export default function PostDetailView({
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-5xl mb-12 relative"
+            className="text-5xl mb-6 relative"
             style={{
               fontFamily: 'var(--font-space-grotesk), sans-serif',
-              color: 'var(--neural-text-primary)',
+              color: 'var(--neural-text-muted)',
               fontWeight: 700,
               textShadow: '0 0 30px rgba(0, 255, 200, 0.3)',
             }}
           >
             {post.title}
           </motion.h1>
+
+          {/* Tags */}
+          {post.tags && post.tags.length > 0 && (
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.35 }}
+              className="flex flex-wrap gap-2 mb-12"
+            >
+              {post.tags.map((tag) => (
+                <button
+                  key={tag.id}
+                  onClick={() => router.push(`/tags/${tag.slug}`)}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm transition-all hover:scale-105"
+                  style={{
+                    backgroundColor: `${tag.color}15`,
+                    color: tag.color,
+                    border: `1px solid ${tag.color}40`,
+                    fontFamily: 'var(--font-ibm-plex-mono), monospace',
+                    fontSize: '12px',
+                  }}
+                >
+                  {tag.name}
+                </button>
+              ))}
+            </motion.div>
+          )}
 
           {/* Content */}
           <motion.div
@@ -211,7 +275,10 @@ export default function PostDetailView({
             transition={{ delay: 0.4 }}
             className="post-prose"
           >
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={markdownComponents}
+            >
               {post.content}
             </ReactMarkdown>
           </motion.div>
@@ -322,7 +389,7 @@ export default function PostDetailView({
                 className="text-xl mb-6"
                 style={{
                   fontFamily: 'var(--font-space-grotesk), sans-serif',
-                  color: 'var(--neural-text-primary)',
+                  color: 'var(--neural-text-muted)',
                   fontWeight: 600,
                 }}
               >
@@ -354,6 +421,12 @@ export default function PostDetailView({
           )}
         </div>
       </motion.div>
+
+      {/* Table of Contents (right side) */}
+      <TableOfContents
+        content={post.content}
+        scrollContainerRef={contentRef}
+      />
     </motion.div>
   );
 }

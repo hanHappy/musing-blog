@@ -7,8 +7,8 @@ import PostDetailView from '@/components/PostDetailView';
 // ISR: 24시간마다 재검증
 export const revalidate = 86400;
 
-// 동적 경로 비활성화 (빌드된 페이지만 허용)
-export const dynamicParams = false;
+// 빌드타임에 없는 slug도 런타임에 ISR로 생성 허용
+export const dynamicParams = true;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -79,7 +79,7 @@ export default async function PostPage({ params }: PageProps) {
   // 현재 게시글 조회
   const { data: post } = await supabase
     .from('posts')
-    .select(`*, category:categories(*)`)
+    .select(`*, category:categories(*), post_tags(tag_id, tags:tags(*))`)
     .eq('slug', slug)
     .eq('published', true)
     .single();
@@ -118,6 +118,11 @@ export default async function PostPage({ params }: PageProps) {
     if (idx < allPosts.length - 1) nextPost = allPosts[idx + 1];
   }
 
+  // Extract tags from post_tags join
+  const tags = (post.post_tags || []).map(
+    (pt: { tag_id: string; tags: { id: string; name: string; slug: string; color: string } }) => pt.tags
+  );
+
   return (
     <PostDetailView
       post={{
@@ -125,6 +130,7 @@ export default async function PostPage({ params }: PageProps) {
         slug: post.slug,
         content: post.content,
         created_at: post.created_at,
+        tags,
       }}
       relatedPosts={relatedPosts}
       prevPost={prevPost}

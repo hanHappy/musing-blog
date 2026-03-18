@@ -11,9 +11,13 @@ import { useEffect, useState } from 'react';
  * Tracks the currently visible heading ID using IntersectionObserver
  *
  * @param headingIds - Array of heading IDs to track
+ * @param root - Optional scroll container element for IntersectionObserver root
  * @returns The ID of the currently active heading
  */
-export function useScrollSpy(headingIds: string[]): string {
+export function useScrollSpy(
+  headingIds: string[],
+  root?: HTMLElement | null
+): string {
   const [activeId, setActiveId] = useState('');
 
   useEffect(() => {
@@ -28,6 +32,7 @@ export function useScrollSpy(headingIds: string[]): string {
         });
       },
       {
+        root: root ?? null,
         rootMargin: '-80px 0px -80% 0px',
         threshold: 0.1,
       }
@@ -39,7 +44,7 @@ export function useScrollSpy(headingIds: string[]): string {
     });
 
     return () => observer.disconnect();
-  }, [headingIds]);
+  }, [headingIds, root]);
 
   return activeId;
 }
