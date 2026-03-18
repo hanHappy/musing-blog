@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { NeuralNetwork } from './NeuralNetwork';
 import { CenterCard } from './CenterCard';
+import { useSessionStorage } from '@/hooks/useSessionStorage';
 import type { NeuralGraphData, NeuralNode } from '@/lib/neural-graph-builder';
 
 interface NeuralHomePageProps {
@@ -15,7 +16,7 @@ export function NeuralHomePage({ initialGraph, tagPostLinks }: NeuralHomePagePro
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [highlightedPosts, setHighlightedPosts] = useState<string[]>([]);
-  const [isChatCollapsed, setIsChatCollapsed] = useState(false);
+  const [isChatCollapsed, setIsChatCollapsed] = useSessionStorage('chat-collapsed', false);
   const [navigatingPostId, setNavigatingPostId] = useState<string | null>(null);
 
   const handleNodeClick = useCallback((node: NeuralNode) => {
