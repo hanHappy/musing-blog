@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { NeuralNetwork } from './NeuralNetwork';
 import { CenterCard } from './CenterCard';
@@ -8,33 +8,32 @@ import type { NeuralGraphData, NeuralNode } from '@/lib/neural-graph-builder';
 
 interface NeuralHomePageProps {
   initialGraph: NeuralGraphData;
+  tagPostLinks?: { source: string; target: string; sharedCount: number }[];
 }
 
-export function NeuralHomePage({ initialGraph }: NeuralHomePageProps) {
+export function NeuralHomePage({ initialGraph, tagPostLinks }: NeuralHomePageProps) {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [highlightedPosts, setHighlightedPosts] = useState<string[]>([]);
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
+  const [navigatingPostId, setNavigatingPostId] = useState<string | null>(null);
 
-  const handleNodeClick = (node: NeuralNode) => {
+  const handleNodeClick = useCallback((node: NeuralNode) => {
     if (node.type === 'post') {
       if (node.slug) {
+        setNavigatingPostId(node.id);
         router.push(`/posts/${node.slug}`);
       }
     } else if (node.type === 'category' || node.type === 'subcategory') {
-      if (activeCategory === node.id) {
-        setActiveCategory(null);
-      } else {
-        setActiveCategory(node.id);
-      }
+      setActiveCategory(prev => prev === node.id ? null : node.id);
     }
-  };
+  }, [router]);
 
-  const handleSlugClick = (slug: string) => {
+  const handleSlugClick = useCallback((slug: string) => {
     router.push(`/posts/${slug}`);
-  };
+  }, [router]);
 
-  const handleHighlightPosts = (slugs: string[]) => {
+  const handleHighlightPosts = useCallback((slugs: string[]) => {
     const nodeIds: string[] = [];
     slugs.forEach((slug) => {
       const node = initialGraph.postMap.get(slug);
@@ -47,11 +46,11 @@ export function NeuralHomePage({ initialGraph }: NeuralHomePageProps) {
     setTimeout(() => {
       setHighlightedPosts([]);
     }, 5000);
-  };
+  }, [initialGraph.postMap]);
 
-  const handleBackgroundClick = () => {
+  const handleBackgroundClick = useCallback(() => {
     setActiveCategory(null);
-  };
+  }, []);
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden neural-bg">
@@ -61,6 +60,8 @@ export function NeuralHomePage({ initialGraph }: NeuralHomePageProps) {
         highlightedPosts={highlightedPosts}
         onNodeClick={handleNodeClick}
         onBackgroundClick={handleBackgroundClick}
+        tagPostLinks={tagPostLinks}
+        navigatingPostId={navigatingPostId}
       />
 
       <CenterCard

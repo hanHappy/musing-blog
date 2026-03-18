@@ -13,6 +13,8 @@ interface NeuralNetworkProps {
   highlightedPosts: string[];
   onNodeClick: (node: NeuralNode) => void;
   onBackgroundClick: () => void;
+  tagPostLinks?: { source: string; target: string; sharedCount: number }[];
+  navigatingPostId?: string | null;
 }
 
 export function NeuralNetwork({
@@ -21,10 +23,13 @@ export function NeuralNetwork({
   highlightedPosts,
   onNodeClick,
   onBackgroundClick,
+  tagPostLinks,
+  navigatingPostId,
 }: NeuralNetworkProps) {
   const { initialNodes, links } = useMemo(() => {
     const flatNodes = flattenNeuralGraph(data);
-    const linkList: { source: string; target: string; depth: number }[] = [];
+
+    const linkList: { source: string; target: string; depth: number; isTagLink?: boolean; sharedCount?: number }[] = [];
 
     const buildLinks = (node: NeuralNode) => {
       if (node.children) {
@@ -41,8 +46,25 @@ export function NeuralNetwork({
       }
     };
     buildLinks(data);
+
+    // Add tag-based post-to-post links
+    if (tagPostLinks) {
+      const nodeIds = new Set(flatNodes.map(n => n.id));
+      for (const tl of tagPostLinks) {
+        if (nodeIds.has(tl.source) && nodeIds.has(tl.target)) {
+          linkList.push({
+            source: tl.source,
+            target: tl.target,
+            depth: 3,
+            isTagLink: true,
+            sharedCount: tl.sharedCount,
+          });
+        }
+      }
+    }
+
     return { initialNodes: flatNodes, links: linkList };
-  }, [data]);
+  }, [data, tagPostLinks]);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const gRef = useRef<SVGGElement>(null);
@@ -113,7 +135,7 @@ export function NeuralNetwork({
     };
     const addAncestors = (nodeId: string) => {
       links.forEach((l) => {
-        if (l.target === nodeId && !set.has(l.source)) {
+        if (!l.isTagLink && l.target === nodeId && !set.has(l.source)) {
           set.add(l.source);
           addAncestors(l.source);
         }
@@ -124,6 +146,22 @@ export function NeuralNetwork({
     addAncestors(activeCategory);
     return set;
   }, [activeCategory, allNodes, links]);
+
+  const blinkingSet = useMemo(() => {
+    if (!navigatingPostId) return null;
+    const set = new Set<string>();
+    set.add(navigatingPostId);
+    const addAncestors = (nodeId: string) => {
+      links.forEach((l) => {
+        if (!l.isTagLink && l.target === nodeId && !set.has(l.source)) {
+          set.add(l.source);
+          addAncestors(l.source);
+        }
+      });
+    };
+    addAncestors(navigatingPostId);
+    return set;
+  }, [navigatingPostId, links]);
 
   const isNodeActive = useCallback(
     (nodeId: string) => {
@@ -178,6 +216,34 @@ export function NeuralNetwork({
         onClick={onBackgroundClick}
       >
         <g ref={gRef}>
+          {/* SVG filter for tag link glow */}
+          <defs>
+            <filter id="tag-link-glow-1" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="1.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="tag-link-glow-2" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="tag-link-glow-3" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="6" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="blur" />
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
           {/* Edges */}
           {links.map((link) => {
             const src = nodeMap.get(link.source);
@@ -186,19 +252,37 @@ export function NeuralNetwork({
 
             const active = isLinkActive(link.source, link.target);
             const dimmed = isLinkDimmed(link.source, link.target);
-            const edgeDepth = link.depth;
+            const isTagLink = !!link.isTagLink;
+
+            let edgeStroke: string;
+            let edgeWidth: number;
+            let glowFilter: string | undefined;
+
+            const sharedCount = link.sharedCount || 1;
+            if (isTagLink) {
+              edgeStroke = '#ffffff';
+              edgeWidth = 0.7;
+              glowFilter = dimmed ? undefined
+                : sharedCount >= 3 ? 'url(#tag-link-glow-3)'
+                : sharedCount >= 2 ? 'url(#tag-link-glow-2)'
+                : 'url(#tag-link-glow-1)';
+            } else {
+              edgeStroke = link.depth === 3 ? '#fde047' : '#00FFC8';
+              edgeWidth = link.depth === 1 ? 1.5 : link.depth === 2 ? 1 : 0.7;
+            }
 
             return (
               <line
-                key={`${link.source}-${link.target}`}
+                key={`${link.source}-${link.target}${isTagLink ? '-tag' : ''}`}
                 x1={src.x || 0}
                 y1={src.y || 0}
                 x2={tgt.x || 0}
                 y2={tgt.y || 0}
-                stroke={edgeDepth === 3 ? '#fde047' : '#00FFC8'}
-                strokeWidth={edgeDepth === 1 ? 1.5 : edgeDepth === 2 ? 1 : 0.7}
-                strokeDasharray={edgeDepth === 3 ? '3 3' : undefined}
-                opacity={dimmed ? 0.05 : active ? 0.6 : 0.25}
+                stroke={edgeStroke}
+                strokeWidth={edgeWidth}
+                strokeDasharray="3 3"
+                opacity={dimmed ? 0.05 : active ? 0.7 : isTagLink ? Math.min(0.8, 0.08 + sharedCount * 0.3) : 0.25}
+                filter={glowFilter}
                 className="transition-opacity duration-300"
               />
             );
@@ -216,6 +300,7 @@ export function NeuralNetwork({
               const active = isNodeActive(node.id);
               const dimmed = isNodeDimmed(node.id);
               const highlighted = highlightedPosts.includes(node.id);
+              const blinking = blinkingSet?.has(node.id) ?? false;
 
               let fill: string, stroke: string, strokeWidth: number;
               let labelFill: string, fontSize: number, fontWeight: number;
@@ -250,9 +335,17 @@ export function NeuralNetwork({
                 fontWeight = 300;
               }
 
+              const glowColor =
+                depth === 1
+                  ? '#00FFC8'
+                  : depth === 2
+                    ? '#a78bfa'
+                    : depth === 3 && node.type === 'subcategory'
+                      ? '#facc15'
+                      : '#fff';
               const glowFilter =
-                active || highlighted
-                  ? `drop-shadow(0 0 8px ${depth === 1 ? '#00FFC8' : depth === 2 ? '#a78bfa' : depth === 3 && node.type === 'subcategory' ? '#facc15' : '#fff'})`
+                active || highlighted || blinking
+                  ? `drop-shadow(0 0 8px ${glowColor})`
                   : undefined;
 
               return (
@@ -261,9 +354,19 @@ export function NeuralNetwork({
                   className="neural-node cursor-pointer"
                   data-node-id={node.id}
                   transform={`translate(${x},${y})`}
-                  opacity={dimmed ? 0.15 : 1}
+                  opacity={dimmed && !blinking ? 0.15 : 1}
                   style={{ transition: 'opacity 0.3s' }}
                 >
+                  {/* Opaque background to hide lines behind node */}
+                  <rect
+                    width={w + 2}
+                    height={h + 2}
+                    x={-(w + 2) / 2}
+                    y={-(h + 2) / 2}
+                    rx={8}
+                    ry={8}
+                    fill="#080B10"
+                  />
                   <rect
                     width={w}
                     height={h}
@@ -272,10 +375,14 @@ export function NeuralNetwork({
                     rx={8}
                     ry={8}
                     fill={fill}
-                    stroke={stroke}
-                    strokeWidth={active || highlighted ? 2 : strokeWidth}
+                    stroke={blinking ? glowColor : stroke}
+                    strokeWidth={active || highlighted || blinking ? 2 : strokeWidth}
                     filter={glowFilter}
-                  />
+                  >
+                    {blinking && (
+                      <animate attributeName="opacity" values="0.5;0.15;0.5" dur="1.2s" repeatCount="indefinite" />
+                    )}
+                  </rect>
                   {depth === 1 && (
                     <circle
                       r={3}
@@ -330,6 +437,7 @@ export function NeuralNetwork({
                       <animate attributeName="opacity" values="0.6;0;0.6" dur="1.5s" repeatCount="indefinite" />
                     </rect>
                   )}
+
                 </g>
               );
             })}
