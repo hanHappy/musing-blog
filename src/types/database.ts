@@ -185,6 +185,15 @@ export interface DashboardStats {
   storage_used: number; // in bytes
 }
 
+// Dashboard extended data
+export interface DashboardData extends DashboardStats {
+  post_timeline: { date: string; count: number }[];
+  recent_posts: { title: string; slug: string; published: boolean; created_at: string; view_count: number }[];
+  category_distribution: { name: string; count: number }[];
+  popular_tags: { name: string; color: string; post_count: number }[];
+  popular_posts: { title: string; slug: string; view_count: number }[];
+}
+
 // RAG settings
 export interface RAGSettings {
   match_threshold: number; // 0.0 - 1.0

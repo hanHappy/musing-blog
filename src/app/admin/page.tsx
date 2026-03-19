@@ -1,43 +1,41 @@
 'use client';
 
-// Admin Dashboard
 import { useEffect, useState } from 'react';
-import type { DashboardStats } from '@/types/database';
+import type { DashboardData } from '@/types/database';
+import PostTimelineChart from '@/components/admin/dashboard/PostTimelineChart';
+import CategoryDistribution from '@/components/admin/dashboard/CategoryDistribution';
+import PopularTags from '@/components/admin/dashboard/PopularTags';
+import RecentPosts from '@/components/admin/dashboard/RecentPosts';
+import PopularPosts from '@/components/admin/dashboard/PopularPosts';
+import StorageGauge from '@/components/admin/dashboard/StorageGauge';
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchStats() {
+    async function fetchDashboard() {
       try {
-        const res = await fetch('/api/admin/stats', {
-          cache: 'no-store',
-        });
-
-        if (!res.ok) {
-          throw new Error('Failed to fetch stats');
-        }
-
-        const data = await res.json();
-        setStats(data);
+        const res = await fetch('/api/admin/dashboard', { cache: 'no-store' });
+        if (!res.ok) throw new Error('Failed to fetch dashboard');
+        const json = await res.json();
+        setData(json);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load stats');
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard');
       } finally {
         setLoading(false);
       }
     }
-
-    fetchStats();
+    fetchDashboard();
   }, []);
 
   if (loading) {
@@ -54,7 +52,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (error || !stats) {
+  if (error || !data) {
     return (
       <div className="text-center py-12">
         <p style={{ color: 'var(--text-secondary)' }}>
@@ -65,58 +63,26 @@ export default function AdminDashboard() {
   }
 
   const cards = [
-    {
-      title: 'Total Posts',
-      value: stats.total_posts,
-      icon: '📝',
-      color: '#0c8bc9',
-    },
-    {
-      title: 'Published Posts',
-      value: stats.published_posts,
-      icon: '✅',
-      color: '#10b981',
-    },
-    {
-      title: 'Draft Posts',
-      value: stats.draft_posts,
-      icon: '📄',
-      color: '#f59e0b',
-    },
-    {
-      title: 'Categories',
-      value: stats.total_categories,
-      icon: '📁',
-      color: '#8b5cf6',
-    },
-    {
-      title: 'Media Files',
-      value: stats.total_media,
-      icon: '🖼️',
-      color: '#ec4899',
-    },
-    {
-      title: 'Storage Used',
-      value: formatBytes(stats.storage_used),
-      icon: '💾',
-      color: '#6366f1',
-    },
+    { title: 'Total Posts', value: data.total_posts, icon: '📝', color: '#0c8bc9' },
+    { title: 'Published', value: data.published_posts, icon: '✅', color: '#10b981' },
+    { title: 'Drafts', value: data.draft_posts, icon: '📄', color: '#f59e0b' },
+    { title: 'Categories', value: data.total_categories, icon: '📁', color: '#8b5cf6' },
+    { title: 'Media Files', value: data.total_media, icon: '🖼️', color: '#ec4899' },
+    { title: 'Storage', value: formatBytes(data.storage_used), icon: '💾', color: '#6366f1' },
   ];
 
   return (
     <div>
-      <h1
-        className="text-3xl font-bold mb-8"
-        style={{ color: 'var(--text-primary)' }}
-      >
+      <h1 className="text-3xl font-bold mb-8" style={{ color: 'var(--text-primary)' }}>
         Dashboard
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         {cards.map((card) => (
           <div
             key={card.title}
-            className="card p-6 transition-all"
+            className="card p-4 transition-all"
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = card.color;
               e.currentTarget.style.boxShadow = 'var(--shadow-md)';
@@ -126,125 +92,77 @@ export default function AdminDashboard() {
               e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
             }}
           >
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-4xl">{card.icon}</span>
-              <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center"
-                style={{ background: card.color + '20' }}
-              >
-                <span style={{ color: card.color, fontSize: '1.5rem' }}>
-                  {card.icon}
-                </span>
-              </div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl">{card.icon}</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                {card.title}
+              </span>
             </div>
-
-            <h3
-              className="text-sm font-medium mb-2"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {card.title}
-            </h3>
-
-            <p
-              className="text-3xl font-bold"
-              style={{ color: 'var(--text-primary)' }}
-            >
+            <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
               {card.value}
             </p>
           </div>
         ))}
       </div>
 
+      {/* Post Timeline Chart */}
+      <div className="mb-8">
+        <PostTimelineChart data={data.post_timeline} />
+      </div>
+
+      {/* Category Distribution + Popular Tags */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <CategoryDistribution data={data.category_distribution} />
+        <PopularTags data={data.popular_tags} />
+      </div>
+
+      {/* Recent Posts + Popular Posts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <RecentPosts data={data.recent_posts} />
+        <PopularPosts data={data.popular_posts} />
+      </div>
+
+      {/* Storage Gauge */}
+      <div className="mb-8">
+        <StorageGauge storageUsed={data.storage_used} totalMedia={data.total_media} />
+      </div>
+
       {/* Quick Actions */}
-      <div className="mt-8">
-        <h2
-          className="text-xl font-semibold mb-4"
-          style={{ color: 'var(--text-primary)' }}
-        >
+      <div>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
           Quick Actions
         </h2>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <a
-            href="/admin/posts/new"
-            className="card p-4 flex items-center gap-4 transition-all"
-            style={{ textDecoration: 'none' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--color-primary)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border-color)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-            }}
-          >
-            <span className="text-3xl">➕</span>
-            <div>
-              <h3
-                className="font-semibold"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                New Post
-              </h3>
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                Create a new blog post
-              </p>
-            </div>
-          </a>
-
-          <a
-            href="/admin/media"
-            className="card p-4 flex items-center gap-4 transition-all"
-            style={{ textDecoration: 'none' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--color-primary)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border-color)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-            }}
-          >
-            <span className="text-3xl">📤</span>
-            <div>
-              <h3
-                className="font-semibold"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                Upload Media
-              </h3>
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                Upload images and files
-              </p>
-            </div>
-          </a>
-
-          <a
-            href="/admin/categories"
-            className="card p-4 flex items-center gap-4 transition-all"
-            style={{ textDecoration: 'none' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--color-primary)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border-color)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-            }}
-          >
-            <span className="text-3xl">📂</span>
-            <div>
-              <h3
-                className="font-semibold"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                Manage Categories
-              </h3>
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                Organize your content
-              </p>
-            </div>
-          </a>
+          {[
+            { href: '/admin/posts/new', icon: '➕', title: 'New Post', desc: 'Create a new blog post' },
+            { href: '/admin/media', icon: '📤', title: 'Upload Media', desc: 'Upload images and files' },
+            { href: '/admin/categories', icon: '📂', title: 'Manage Categories', desc: 'Organize your content' },
+          ].map((action) => (
+            <a
+              key={action.href}
+              href={action.href}
+              className="card p-4 flex items-center gap-4 transition-all"
+              style={{ textDecoration: 'none' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+              }}
+            >
+              <span className="text-3xl">{action.icon}</span>
+              <div>
+                <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {action.title}
+                </h3>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  {action.desc}
+                </p>
+              </div>
+            </a>
+          ))}
         </div>
       </div>
     </div>
