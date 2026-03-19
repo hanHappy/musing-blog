@@ -508,9 +508,17 @@
     scroll-margin-top: 2rem;
   }
 
+  .post-prose h1 {
+    font-size: 2rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+    margin-top: 3rem;
+    color: var(--color-primary);
+  }
+
   .post-prose h2 {
     font-size: 1.875rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--text-primary);
     padding-bottom: 0.5rem;
     margin-top: 3rem;
   }
@@ -724,7 +732,20 @@
     color: var(--neural-text-primary);
   }
 
-  .neural-post-detail .post-prose h2 {
+  .neural-post-detail .post-prose ul,
+  .neural-post-detail .post-prose ol {
+    color: var(--neural-text-primary);
+  }
+
+  .neural-post-detail .post-prose ul li::marker {
+    color: var(--neural-accent);
+  }
+
+  .neural-post-detail .post-prose ol li::marker {
+    color: var(--neural-accent);
+  }
+
+  .neural-post-detail .post-prose h1 {
     color: var(--neural-accent);
   }
 
@@ -743,12 +764,17 @@
   }
 
   .neural-post-detail .post-prose pre {
-    background-color: rgba(0, 0, 0, 0.5);
+    background: #0d1117;
     border: 1px solid rgba(0, 255, 200, 0.2);
   }
 
   .neural-post-detail .post-prose pre code {
     color: var(--neural-text-primary);
+    background-color: transparent;
+  }
+
+  /* Let highlight.js theme handle syntax coloring */
+  .neural-post-detail .post-prose pre code.hljs {
     background-color: transparent;
   }
 
@@ -768,6 +794,39 @@
 
   .neural-post-detail .post-prose hr {
     border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Admin MD Editor - ensure headings and list markers are visible */
+  .w-md-editor .wmde-markdown h1,
+  .w-md-editor .wmde-markdown h2,
+  .w-md-editor .wmde-markdown h3,
+  .w-md-editor .wmde-markdown h4,
+  .w-md-editor .wmde-markdown h5,
+  .w-md-editor .wmde-markdown h6 {
+    color: #1e293b;
+  }
+
+  .w-md-editor .wmde-markdown ul,
+  .w-md-editor .wmde-markdown ol {
+    color: #1e293b;
+  }
+
+  .w-md-editor .wmde-markdown ul li::marker {
+    color: #475569;
+  }
+
+  .w-md-editor .wmde-markdown ol li::marker {
+    color: #475569;
+  }
+
+  /* Also fix the source/edit pane headings and list markers */
+  .w-md-editor .w-md-editor-text-pre > code .token.title,
+  .w-md-editor .w-md-editor-text-pre > code .token.important {
+    color: #1e293b;
+  }
+
+  .w-md-editor .w-md-editor-text-pre > code .token.list {
+    color: #475569;
   }
 
   /* Neural Network Styles */
