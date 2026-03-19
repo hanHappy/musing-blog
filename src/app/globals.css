@@ -605,10 +605,21 @@
   }
 
   /* List */
-  .post-prose ul,
+  .post-prose ul {
+    margin: 1.5rem 0;
+    padding-left: 2rem;
+    list-style-type: disc;
+  }
+
+  .post-prose ul.contains-task-list {
+    list-style-type: none;
+    padding-left: 1rem;
+  }
+
   .post-prose ol {
     margin: 1.5rem 0;
     padding-left: 2rem;
+    list-style-type: decimal;
   }
 
   .post-prose li {
