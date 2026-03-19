@@ -138,6 +138,24 @@ export default async function PostPage({ params }: PageProps) {
     (pt: { tag_id: string; tags: { id: string; name: string; slug: string; color: string } }) => pt.tags
   );
 
+  // Build category breadcrumb chain (child → root)
+  let categoryBreadcrumb: { id: string; name: string; slug: string }[] = [];
+  if (post.category) {
+    const chain: { id: string; name: string; slug: string }[] = [post.category];
+    let currentParentId = post.category.parent_id;
+    while (currentParentId) {
+      const { data: parent } = await supabase
+        .from('categories')
+        .select('id, name, slug, parent_id')
+        .eq('id', currentParentId)
+        .single();
+      if (!parent) break;
+      chain.unshift(parent);
+      currentParentId = parent.parent_id;
+    }
+    categoryBreadcrumb = chain;
+  }
+
   return (
     <PostDetailView
       post={{
@@ -147,6 +165,7 @@ export default async function PostPage({ params }: PageProps) {
         created_at: post.created_at,
         tags,
       }}
+      categoryBreadcrumb={categoryBreadcrumb}
       relatedPosts={relatedPosts}
       prevPost={prevPost}
       nextPost={nextPost}

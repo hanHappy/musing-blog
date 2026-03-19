@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
-import { ArrowLeft, Copy, Check, Eye } from 'lucide-react';
+import { ArrowLeft, Copy, Check } from 'lucide-react';
+
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -32,6 +33,7 @@ interface RelatedPost {
 
 interface PostDetailViewProps {
   post: PostData;
+  categoryBreadcrumb?: { id: string; name: string; slug: string }[];
   relatedPosts: RelatedPost[];
   prevPost: RelatedPost | null;
   nextPost: RelatedPost | null;
@@ -40,6 +42,7 @@ interface PostDetailViewProps {
 
 export default function PostDetailView({
   post,
+  categoryBreadcrumb = [],
   relatedPosts,
   prevPost,
   nextPost,
@@ -260,6 +263,7 @@ export default function PostDetailView({
         >
           {Math.round(scrollProgress)}%
         </div>
+
       </motion.div>
 
       {/* Main content */}
@@ -275,28 +279,44 @@ export default function PostDetailView({
         }}
       >
         <div className="max-w-3xl mx-auto px-8">
-          {/* Post slug badge */}
+          {/* Category + draft badge */}
           <motion.div
             initial={{ scale: 0, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="mb-6"
+            className="mb-4 flex items-center gap-3"
           >
-            <span
-              className="inline-block px-4 py-2 rounded-full border"
-              style={{
-                borderColor: 'var(--neural-node-sub)',
-                color: 'var(--neural-node-sub)',
-                fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                backgroundColor: 'rgba(167, 139, 250, 0.1)',
-                boxShadow: '0 0 20px rgba(167, 139, 250, 0.2)',
-              }}
-            >
-              {post.slug}
-            </span>
+            {categoryBreadcrumb.length > 0 && (
+              <div
+                className="flex items-center gap-1.5"
+                style={{
+                  fontFamily: 'var(--font-ibm-plex-mono), monospace',
+                  fontSize: '14px',
+                }}
+              >
+                {categoryBreadcrumb.map((cat, index) => (
+                  <span key={cat.id} className="flex items-center gap-1.5">
+                    {index > 0 && (
+                      <span style={{ color: 'var(--neural-text-muted)', opacity: 0.5 }}>/</span>
+                    )}
+                    <button
+                      onClick={() => router.push(`/categories/${cat.slug}`)}
+                      className="transition-colors hover:opacity-80"
+                      style={{
+                        color: index === categoryBreadcrumb.length - 1
+                          ? 'var(--neural-accent)'
+                          : 'var(--neural-text-muted)',
+                      }}
+                    >
+                      {cat.name}
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
             {isDraft && (
               <span
-                className="inline-block ml-3 px-4 py-2 rounded-full border"
+                className="inline-block px-4 py-2 rounded-full border"
                 style={{
                   borderColor: '#F59E0B',
                   color: '#F59E0B',
@@ -306,19 +326,6 @@ export default function PostDetailView({
                 }}
               >
                 임시 저장
-              </span>
-            )}
-            {viewCount !== null && (
-              <span
-                className="inline-flex items-center gap-1.5 ml-3 px-3 py-2 rounded-full text-sm"
-                style={{
-                  color: 'var(--neural-text-muted)',
-                  fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                  fontSize: '12px',
-                }}
-              >
-                <Eye size={14} />
-                {viewCount.toLocaleString()}
               </span>
             )}
           </motion.div>
@@ -338,6 +345,23 @@ export default function PostDetailView({
           >
             {post.title}
           </motion.h1>
+
+          {/* Meta line: date */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.35 }}
+            className="mb-8"
+            style={{
+              color: 'var(--neural-text-muted)',
+              fontFamily: 'var(--font-ibm-plex-mono), monospace',
+              fontSize: '14px',
+            }}
+          >
+            {new Date(post.created_at).toLocaleDateString('ko-KR', {
+              year: 'numeric', month: '2-digit', day: '2-digit'
+            }).replace(/\. /g, '.').replace(/\.$/, '')}
+          </motion.div>
 
           {/* Tags */}
           {post.tags && post.tags.length > 0 && (
