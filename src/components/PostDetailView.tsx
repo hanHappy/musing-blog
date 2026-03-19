@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Eye } from 'lucide-react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/github-dark.css';
 import TableOfContents from '@/components/TableOfContents';
 
 interface PostTag {
@@ -33,6 +35,7 @@ interface PostDetailViewProps {
   relatedPosts: RelatedPost[];
   prevPost: RelatedPost | null;
   nextPost: RelatedPost | null;
+  isDraft?: boolean;
 }
 
 export default function PostDetailView({
@@ -40,10 +43,40 @@ export default function PostDetailView({
   relatedPosts,
   prevPost,
   nextPost,
+  isDraft = false,
 }: PostDetailViewProps) {
   const router = useRouter();
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [viewCount, setViewCount] = useState<number | null>(null);
+  const viewCountTracked = useRef(false);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // Increment view count (once per session per slug)
+  useEffect(() => {
+    if (viewCountTracked.current) return;
+    viewCountTracked.current = true;
+
+    const key = `viewed:${post.slug}`;
+    if (sessionStorage.getItem(key)) {
+      fetch(`/api/views?slug=${encodeURIComponent(post.slug)}`)
+        .then((res) => res.json())
+        .then((data) => setViewCount(data.view_count))
+        .catch(() => {});
+      return;
+    }
+
+    fetch('/api/views', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: post.slug }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setViewCount(data.view_count);
+        sessionStorage.setItem(key, '1');
+      })
+      .catch(() => {});
+  }, [post.slug]);
 
   // Track scroll progress
   useEffect(() => {
@@ -90,6 +123,43 @@ export default function PostDetailView({
       .replace(/^-|-$/g, '');
   };
 
+  const CodeBlock = useCallback(({ children, ...props }: React.HTMLAttributes<HTMLPreElement>) => {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+      const code = extractText(children as ReactNode);
+      navigator.clipboard.writeText(code).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    };
+
+    return (
+      <div style={{ position: 'relative' }}>
+        <button
+          onClick={handleCopy}
+          className="p-1.5 rounded-md transition-colors"
+          style={{
+            position: 'absolute',
+            top: '0.8rem',
+            right: '0.8rem',
+            zIndex: 1,
+            background: 'rgba(255, 255, 255, 0.1)',
+            color: copied ? 'var(--neural-accent)' : 'var(--neural-text-muted)',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+          aria-label="Copy code"
+        >
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+        </button>
+        <pre {...props}>
+          {children}
+        </pre>
+      </div>
+    );
+  }, []);
+
   const markdownComponents: Components = {
     h2: ({ children }) => (
       <h2 id={generateHeadingId(children)}>{children}</h2>
@@ -97,6 +167,7 @@ export default function PostDetailView({
     h3: ({ children }) => (
       <h3 id={generateHeadingId(children)}>{children}</h3>
     ),
+    pre: CodeBlock,
   };
 
   return (
@@ -223,6 +294,33 @@ export default function PostDetailView({
             >
               {post.slug}
             </span>
+            {isDraft && (
+              <span
+                className="inline-block ml-3 px-4 py-2 rounded-full border"
+                style={{
+                  borderColor: '#F59E0B',
+                  color: '#F59E0B',
+                  fontFamily: 'var(--font-ibm-plex-mono), monospace',
+                  backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                  boxShadow: '0 0 20px rgba(245, 158, 11, 0.2)',
+                }}
+              >
+                임시 저장
+              </span>
+            )}
+            {viewCount !== null && (
+              <span
+                className="inline-flex items-center gap-1.5 ml-3 px-3 py-2 rounded-full text-sm"
+                style={{
+                  color: 'var(--neural-text-muted)',
+                  fontFamily: 'var(--font-ibm-plex-mono), monospace',
+                  fontSize: '12px',
+                }}
+              >
+                <Eye size={14} />
+                {viewCount.toLocaleString()}
+              </span>
+            )}
           </motion.div>
 
           {/* Title with glow effect */}
@@ -233,7 +331,7 @@ export default function PostDetailView({
             className="text-5xl mb-6 relative"
             style={{
               fontFamily: 'var(--font-space-grotesk), sans-serif',
-              color: 'var(--neural-text-muted)',
+              color: 'var(--neural-text-primary)',
               fontWeight: 700,
               textShadow: '0 0 30px rgba(0, 255, 200, 0.3)',
             }}
@@ -277,6 +375,7 @@ export default function PostDetailView({
           >
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
               components={markdownComponents}
             >
               {post.content}

@@ -24,6 +24,7 @@ export interface Post {
   updated_at: string;
   published: boolean;
   author_id: string | null;
+  view_count: number;
 }
 
 export interface Media {
