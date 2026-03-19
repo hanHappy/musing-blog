@@ -300,7 +300,7 @@ export default function PostDetailView({
                       <span style={{ color: 'var(--neural-text-muted)', opacity: 0.5 }}>/</span>
                     )}
                     <button
-                      onClick={() => router.push(`/categories/${cat.slug}`)}
+                      onClick={() => router.push(`/category/${cat.slug}`)}
                       className="transition-colors hover:opacity-80"
                       style={{
                         color: index === categoryBreadcrumb.length - 1

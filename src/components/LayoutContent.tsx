@@ -17,7 +17,9 @@ export default function LayoutContent({
     pathname === '/' ||
     pathname?.startsWith('/login') ||
     pathname?.startsWith('/admin') ||
-    pathname?.startsWith('/posts/');
+    pathname?.startsWith('/posts/') ||
+    pathname?.startsWith('/category/') ||
+    pathname?.startsWith('/tags/');
 
   if (hideLayout) {
     return <>{children}</>;

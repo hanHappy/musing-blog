@@ -107,21 +107,52 @@ export default async function TagPage({ params }: PageProps) {
 
   return (
     <div
-      className="min-h-screen"
+      className="relative min-h-screen"
       style={{ background: 'var(--neural-bg)' }}
     >
-      <div className="max-w-3xl mx-auto px-8 py-24">
-        {/* Back link */}
+      {/* Neural dot grid background */}
+      <div
+        className="pointer-events-none fixed inset-0 opacity-30"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='0.6' fill='%2300ffc840'/%3E%3C/svg%3E")`,
+          backgroundSize: '40px 40px',
+        }}
+      />
+
+      {/* Fixed header */}
+      <header
+        className="fixed top-0 left-0 right-0 z-50 flex items-center px-8 py-5"
+        style={{
+          background:
+            'linear-gradient(180deg, rgba(8,11,16,0.95) 0%, rgba(8,11,16,0.8) 60%, transparent 100%)',
+          backdropFilter: 'blur(10px)',
+        }}
+      >
         <Link
           href="/"
-          className="inline-flex items-center gap-2 mb-8 text-sm transition-colors hover:opacity-80"
+          className="flex items-center gap-2 text-sm transition-colors hover:opacity-80"
           style={{
             color: 'var(--neural-text-muted)',
-            fontFamily: 'var(--font-ibm-plex-mono), monospace',
+            fontFamily: 'var(--font-space-grotesk), sans-serif',
           }}
         >
-          ← Back
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--neural-accent)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          돌아가기
         </Link>
+      </header>
+
+      <div className="relative max-w-3xl mx-auto px-8 pt-28 pb-24">
 
         {/* Tag header */}
         <div className="mb-12">
