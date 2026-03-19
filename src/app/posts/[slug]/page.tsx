@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { createBrowserClient } from '@supabase/ssr';
-import { createClient } from '@/lib/supabase-server';
+import { createClient, isAdmin } from '@/lib/supabase-server';
 import PostDetailView from '@/components/PostDetailView';
 
 // ISR: 24시간마다 재검증
@@ -42,12 +42,18 @@ export async function generateMetadata({
   }
 
   const supabase = await createClient();
-  const { data: post } = await supabase
+  const admin = await isAdmin();
+
+  let query = supabase
     .from('posts')
-    .select('title, excerpt, created_at')
-    .eq('slug', slug)
-    .eq('published', true)
-    .single();
+    .select('title, excerpt, created_at, published')
+    .eq('slug', slug);
+
+  if (!admin) {
+    query = query.eq('published', true);
+  }
+
+  const { data: post } = await query.single();
 
   if (!post) {
     return { title: 'Not Found' };
@@ -56,6 +62,7 @@ export async function generateMetadata({
   return {
     title: `${post.title} - Muse.log`,
     description: post.excerpt || undefined,
+    ...(post.published === false && { robots: { index: false, follow: false } }),
     openGraph: {
       title: post.title,
       description: post.excerpt || undefined,
@@ -75,14 +82,19 @@ export default async function PostPage({ params }: PageProps) {
   }
 
   const supabase = await createClient();
+  const admin = await isAdmin();
 
-  // 현재 게시글 조회
-  const { data: post } = await supabase
+  // 현재 게시글 조회 (admin은 draft도 조회 가능)
+  let postQuery = supabase
     .from('posts')
     .select(`*, category:categories(*), post_tags(tag_id, tags:tags(*))`)
-    .eq('slug', slug)
-    .eq('published', true)
-    .single();
+    .eq('slug', slug);
+
+  if (!admin) {
+    postQuery = postQuery.eq('published', true);
+  }
+
+  const { data: post } = await postQuery.single();
 
   if (!post) {
     notFound();
@@ -102,20 +114,23 @@ export default async function PostPage({ params }: PageProps) {
     if (related) relatedPosts = related;
   }
 
-  // 이전/다음 게시글
-  const { data: allPosts } = await supabase
-    .from('posts')
-    .select('title, slug')
-    .eq('published', true)
-    .order('created_at', { ascending: true });
-
+  // 이전/다음 게시글 (published 기준 유지)
+  const isDraft = !post.published;
   let prevPost: { title: string; slug: string } | null = null;
   let nextPost: { title: string; slug: string } | null = null;
 
-  if (allPosts) {
-    const idx = allPosts.findIndex((p) => p.slug === slug);
-    if (idx > 0) prevPost = allPosts[idx - 1];
-    if (idx < allPosts.length - 1) nextPost = allPosts[idx + 1];
+  if (!isDraft) {
+    const { data: allPosts } = await supabase
+      .from('posts')
+      .select('title, slug')
+      .eq('published', true)
+      .order('created_at', { ascending: true });
+
+    if (allPosts) {
+      const idx = allPosts.findIndex((p) => p.slug === slug);
+      if (idx > 0) prevPost = allPosts[idx - 1];
+      if (idx < allPosts.length - 1) nextPost = allPosts[idx + 1];
+    }
   }
 
   // Extract tags from post_tags join
@@ -135,6 +150,7 @@ export default async function PostPage({ params }: PageProps) {
       relatedPosts={relatedPosts}
       prevPost={prevPost}
       nextPost={nextPost}
+      isDraft={isDraft}
     />
   );
 }
