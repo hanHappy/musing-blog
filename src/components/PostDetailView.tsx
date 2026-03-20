@@ -10,6 +10,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
 import TableOfContents from '@/components/TableOfContents';
+import AdminToolbar from '@/components/AdminToolbar';
 
 interface PostTag {
   id: string;
@@ -38,6 +39,7 @@ interface PostDetailViewProps {
   prevPost: RelatedPost | null;
   nextPost: RelatedPost | null;
   isDraft?: boolean;
+  isAdmin?: boolean;
 }
 
 export default function PostDetailView({
@@ -47,6 +49,7 @@ export default function PostDetailView({
   prevPost,
   nextPost,
   isDraft = false,
+  isAdmin = false,
 }: PostDetailViewProps) {
   const router = useRouter();
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -164,6 +167,9 @@ export default function PostDetailView({
   }, []);
 
   const markdownComponents: Components = {
+    h1: ({ children }) => (
+      <h1 id={generateHeadingId(children)}>{children}</h1>
+    ),
     h2: ({ children }) => (
       <h2 id={generateHeadingId(children)}>{children}</h2>
     ),
@@ -550,6 +556,9 @@ export default function PostDetailView({
         content={post.content}
         scrollContainerRef={contentRef}
       />
+
+      {/* Admin toolbar (bottom-right) */}
+      {isAdmin && <AdminToolbar slug={post.slug} />}
     </motion.div>
   );
 }

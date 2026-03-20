@@ -170,6 +170,7 @@ export default async function PostPage({ params }: PageProps) {
       prevPost={prevPost}
       nextPost={nextPost}
       isDraft={isDraft}
+      isAdmin={admin}
     />
   );
 }

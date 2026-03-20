@@ -23,10 +23,9 @@ export interface BreadcrumbSegment {
 
 /**
  * Table of Contents item extracted from markdown headings
- * Only level 2 and 3 headings are included
  */
 export interface TocItem {
   id: string;
   text: string;
-  level: 2 | 3;
+  level: 1 | 2 | 3;
 }
