@@ -145,7 +145,7 @@ export function CenterCard({ onSlugClick, onHighlightPosts, isCollapsed, onColla
                 color: 'var(--neural-text-muted)',
               }}
             >
-              개발하고 투자하고 살아가는 사람의 기록
+              사유, 기록, 연결
             </p>
 
             {/* Links */}
