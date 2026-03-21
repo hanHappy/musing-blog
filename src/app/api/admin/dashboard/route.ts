@@ -32,11 +32,11 @@ export async function GET() {
       supabase.from('categories').select('*', { count: 'exact', head: true }),
       supabase.from('media').select('*', { count: 'exact', head: true }),
       supabase.from('media').select('size'),
-      // Posts created in last 90 days for timeline
+      // Posts created since start of current year for timeline
       supabase
         .from('posts')
         .select('created_at')
-        .gte('created_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
+        .gte('created_at', new Date(new Date().getFullYear(), 0, 1).toISOString())
         .order('created_at', { ascending: true }),
       // Recent 5 posts
       supabase
