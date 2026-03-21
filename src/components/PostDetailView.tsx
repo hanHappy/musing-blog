@@ -452,6 +452,10 @@ export default function PostDetailView({
                     style={{
                       color: 'var(--neural-text-primary)',
                       fontFamily: 'var(--font-space-grotesk), sans-serif',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
                     }}
                   >
                     {prevPost.title}
@@ -495,6 +499,10 @@ export default function PostDetailView({
                     style={{
                       color: 'var(--neural-text-primary)',
                       fontFamily: 'var(--font-space-grotesk), sans-serif',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
                     }}
                   >
                     {nextPost.title}
