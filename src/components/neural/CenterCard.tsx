@@ -210,7 +210,7 @@ export function CenterCard({ onSlugClick, onHighlightPosts, isCollapsed, onColla
                     color: 'var(--neural-text-muted)',
                   }}
                 >
-                  무엇이든 물어보세요 ✨
+                  어떤 이야기가 궁금하신가요?
                 </p>
               </div>
             ) : (
@@ -264,7 +264,7 @@ export function CenterCard({ onSlugClick, onHighlightPosts, isCollapsed, onColla
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onFocus={handleInputFocus}
-              placeholder="🔍 muse에게 무엇이든 물어보세요..."
+              placeholder="무엇이든 물어보세요..."
               disabled={isProcessing}
               className="w-full px-4 py-3 pr-12 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] focus:border-[var(--neural-accent)] focus:outline-none transition-colors"
               style={{
