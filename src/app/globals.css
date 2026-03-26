@@ -509,26 +509,24 @@
   }
 
   .post-prose h1 {
-    font-size: 2rem;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.5rem;
-    margin-top: 3rem;
-    color: var(--color-primary);
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin-top: 3.5rem;
   }
 
   .post-prose h2 {
-    font-size: 1.875rem;
-    border-bottom: 1px solid var(--text-primary);
-    padding-bottom: 0.5rem;
+    font-size: 1.75rem;
     margin-top: 3rem;
   }
 
   .post-prose h3 {
-    font-size: 1.5rem;
+    font-size: 1.375rem;
   }
 
   .post-prose h4 {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin-top: 1.5rem;
   }
 
   /* Paragraph */
@@ -697,16 +695,20 @@
 
   /* Mobile Responsive */
   @media (max-width: 768px) {
+    .post-prose h1 {
+      font-size: 1.75rem;
+    }
+
     .post-prose h2 {
-      font-size: 1.5rem;
+      font-size: 1.375rem;
     }
 
     .post-prose h3 {
-      font-size: 1.25rem;
+      font-size: 1.125rem;
     }
 
     .post-prose h4 {
-      font-size: 1.125rem;
+      font-size: 1rem;
     }
 
     .post-prose pre {
@@ -757,7 +759,7 @@
   }
 
   .neural-post-detail .post-prose h1 {
-    color: var(--neural-accent);
+    color: var(--neural-text-primary);
   }
 
   .neural-post-detail .post-prose a {

@@ -46,6 +46,11 @@ export default function TableOfContents({
 
   if (items.length === 0) return null;
 
+  // 상대 레벨 계산: 글에서 실제 사용된 최소 헤딩 레벨을 기준으로 정규화
+  const minLevel = Math.min(...items.map((item) => item.level));
+  const getRelativeLevel = (level: number) =>
+    Math.min(level - minLevel, 2) as 0 | 1 | 2;
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element && scrollContainerRef?.current) {
@@ -89,7 +94,7 @@ export default function TableOfContents({
                   transition={{ delay: 0.6 + index * 0.05 }}
                   className="block w-full text-left px-2 py-1.5 rounded-lg transition-colors"
                   style={{
-                    paddingLeft: item.level === 1 ? '0.5rem' : item.level === 2 ? '1rem' : '1.5rem',
+                    paddingLeft: `${0.5 + getRelativeLevel(item.level) * 0.75}rem`,
                     backgroundColor:
                       activeId === item.id
                         ? 'rgba(0, 255, 200, 0.15)'
@@ -113,15 +118,11 @@ export default function TableOfContents({
                       color:
                         activeId === item.id
                           ? 'var(--neural-accent)'
-                          : item.level === 1
-                            ? 'var(--neural-accent)'
-                            : item.level === 2
-                              ? 'var(--neural-text-primary)'
-                              : 'var(--neural-text-muted)',
+                          : 'var(--neural-text-primary)',
                       fontFamily: 'var(--font-ibm-plex-mono), sans-serif',
-                      fontWeight: item.level === 1 ? 700 : item.level === 2 ? 500 : 400,
-                      fontSize: item.level === 1 ? '13px' : item.level === 2 ? '12px' : '11px',
-                      opacity: activeId === item.id ? 1 : item.level === 3 ? 0.7 : 1,
+                      fontWeight: getRelativeLevel(item.level) === 0 ? 700 : 500,
+                      fontSize: getRelativeLevel(item.level) === 0 ? '13px' : '12px',
+                      opacity: 1,
                     }}
                   >
                     {item.text}
