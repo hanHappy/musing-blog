@@ -19,8 +19,17 @@ export default function RAGSettingsPage() {
 
     setRegenerating(true);
     try {
-      // TODO: Implement bulk regeneration endpoint
-      alert('Bulk regeneration will be implemented in the future');
+      const response = await fetch('/api/embeddings/bulk', { method: 'POST' });
+      const result = await response.json();
+      if (!response.ok) {
+        alert(`Error: ${result.error || 'Unknown error'}`);
+        return;
+      }
+      alert(
+        `Completed: ${result.success}/${result.total} posts processed, ${result.failed} failed`
+      );
+    } catch (err) {
+      alert(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setRegenerating(false);
     }

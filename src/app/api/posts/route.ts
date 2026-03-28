@@ -3,6 +3,7 @@ import { createClient, isAdmin } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import type { CreatePostRequest, UpdatePostRequest } from '@/types/database';
+import { generateChunkEmbeddings } from '@/lib/rag/embeddings';
 
 // GET /api/posts - Get all posts (public: only published, admin: all)
 export async function GET(request: Request) {
@@ -104,12 +105,12 @@ export async function POST(request: Request) {
     }
   }
 
-  // Generate embedding if post is published
+  // Generate chunk embeddings if post is published
   if (data.published) {
     try {
-      await generateEmbedding(data.id, data.title, data.content);
+      await generateChunkEmbeddings(data.id, data.title, data.content, data.excerpt);
     } catch (embedError) {
-      console.error('Failed to generate embedding:', embedError);
+      console.error('Failed to generate chunk embeddings:', embedError);
       // Don't fail the request if embedding generation fails
     }
   }
@@ -177,12 +178,12 @@ export async function PATCH(request: Request) {
     }
   }
 
-  // 6. Regenerate embedding if content changed and post is published
+  // 6. Regenerate chunk embeddings if content changed and post is published
   if ((updates.content || updates.title) && data.published) {
     try {
-      await generateEmbedding(data.id, data.title, data.content);
+      await generateChunkEmbeddings(data.id, data.title, data.content, data.excerpt);
     } catch (embedError) {
-      console.error('Failed to regenerate embedding:', embedError);
+      console.error('Failed to regenerate chunk embeddings:', embedError);
     }
   }
 
@@ -235,37 +236,3 @@ export async function DELETE(request: Request) {
   return NextResponse.json({ success: true });
 }
 
-// Helper function to generate embedding
-async function generateEmbedding(
-  postId: string,
-  title: string,
-  content: string
-) {
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'text-embedding-3-small',
-      input: `${title}\n\n${content}`,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.statusText}`);
-  }
-
-  const { data } = await response.json();
-  const embedding = data[0].embedding;
-
-  // Save embedding to database
-  const supabase = await createClient();
-  await supabase
-    .from('post_embeddings')
-    .upsert({
-      post_id: postId,
-      embedding,
-    });
-}

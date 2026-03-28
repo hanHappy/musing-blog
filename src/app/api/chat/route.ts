@@ -1,7 +1,59 @@
-// API route for RAG chatbot
+// API route for RAG chatbot (chunk-based search)
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
-import type { ChatRequest, ChatResponse, SearchPostsResult } from '@/types/database';
+import type { ChatRequest, ChatResponse } from '@/types/database';
+
+interface SearchChunkResult {
+  chunk_id: string;
+  post_id: string;
+  title: string;
+  slug: string;
+  chunk_text: string;
+  heading: string | null;
+  chunk_index: number;
+  metadata: Record<string, unknown>;
+  similarity: number;
+}
+
+/**
+ * 검색된 청크들을 포스트별로 그룹화하고, chunk_index 순으로 정렬하여
+ * 구조화된 컨텍스트를 조립한다.
+ */
+function buildContext(chunks: SearchChunkResult[]): { context: string; sources: { title: string; slug: string }[] } {
+  // 포스트별 그룹화
+  const postMap = new Map<string, { title: string; slug: string; chunks: SearchChunkResult[] }>();
+
+  for (const chunk of chunks) {
+    const existing = postMap.get(chunk.post_id);
+    if (existing) {
+      existing.chunks.push(chunk);
+    } else {
+      postMap.set(chunk.post_id, {
+        title: chunk.title,
+        slug: chunk.slug,
+        chunks: [chunk],
+      });
+    }
+  }
+
+  // 각 포스트 내 청크를 chunk_index 순으로 정렬
+  const contextParts: string[] = [];
+  const sources: { title: string; slug: string }[] = [];
+
+  for (const [, post] of postMap) {
+    post.chunks.sort((a, b) => a.chunk_index - b.chunk_index);
+    sources.push({ title: post.title, slug: post.slug });
+
+    const chunkTexts = post.chunks.map((c) => {
+      const sectionLabel = c.heading ? `[섹션: ${c.heading}]\n` : '';
+      return `${sectionLabel}${c.chunk_text}`;
+    });
+
+    contextParts.push(`=== 출처: ${post.title} ===\n${chunkTexts.join('\n\n')}`);
+  }
+
+  return { context: contextParts.join('\n\n'), sources };
+}
 
 export async function POST(request: Request) {
   try {
@@ -38,14 +90,14 @@ export async function POST(request: Request) {
     const embeddingData = await embeddingResponse.json();
     const queryEmbedding = embeddingData.data[0].embedding;
 
-    // Step 2: Search for similar posts using pgvector
+    // Step 2: Search for similar chunks using pgvector
     const supabase = await createClient();
-    const { data: similarPosts, error: searchError } = await supabase.rpc(
-      'search_posts',
+    const { data: similarChunks, error: searchError } = await supabase.rpc(
+      'search_chunks',
       {
         query_embedding: queryEmbedding,
-        match_threshold: 0.7,
-        match_count: 3,
+        match_threshold: 0.3,
+        match_count: 5,
       }
     );
 
@@ -57,8 +109,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // If no similar posts found, return a default message
-    if (!similarPosts || similarPosts.length === 0) {
+    // If no similar chunks found, return a default message
+    if (!similarChunks || similarChunks.length === 0) {
       return NextResponse.json({
         answer:
           '죄송합니다. 관련된 블로그 포스트를 찾을 수 없습니다. 다른 질문을 해주시겠어요?',
@@ -66,13 +118,10 @@ export async function POST(request: Request) {
       });
     }
 
-    // Cast to proper type
-    const typedPosts = similarPosts as SearchPostsResult[];
+    const typedChunks = similarChunks as SearchChunkResult[];
 
-    // Step 3: Build context from similar posts
-    const context = typedPosts
-      .map((post) => `### ${post.title}\n${post.content.slice(0, 1000)}`)
-      .join('\n\n');
+    // Step 3: Build context from similar chunks (grouped by post)
+    const { context, sources } = buildContext(typedChunks);
 
     // Step 4: Generate answer using GPT
     const completionResponse = await fetch(
@@ -88,16 +137,17 @@ export async function POST(request: Request) {
           messages: [
             {
               role: 'system',
-              content: `당신은 블로그 어시스턴트입니다. 다음 블로그 포스트를 참고하여 사용자의 질문에 답변하세요.
+              content: `당신은 "muse.log" 블로그의 AI 어시스턴트입니다.
+아래 블로그 포스트 내용을 참고하여 사용자의 질문에 답변하세요.
 
-참고 포스트:
 ${context}
 
 답변 시 다음 규칙을 따르세요:
-- 블로그 포스트의 내용을 바탕으로 정확하게 답변하세요
+- 참고 포스트의 내용을 바탕으로 정확하게 답변하세요
 - 자연스러운 한국어로 답변하세요
 - 답변은 300 토큰 이내로 간결하게 작성하세요
-- 포스트에 없는 내용은 추측하지 마세요`,
+- 포스트에 없는 내용은 추측하지 마세요
+- 어떤 포스트를 참고했는지 자연스럽게 언급하세요`,
             },
             {
               role: 'user',
@@ -120,10 +170,7 @@ ${context}
     // Step 5: Return answer with sources
     const response: ChatResponse = {
       answer,
-      sources: typedPosts.map((post) => ({
-        title: post.title,
-        slug: post.slug,
-      })),
+      sources,
     };
 
     return NextResponse.json(response);
