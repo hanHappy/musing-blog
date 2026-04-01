@@ -9,6 +9,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   relatedSlugs?: string[];
+  isNew?: boolean;
 }
 
 interface CenterCardProps {
@@ -65,6 +66,7 @@ export function CenterCard({ onSlugClick, onHighlightPosts, isCollapsed, onColla
         role: 'assistant',
         content: data.answer,
         relatedSlugs: data.sources.map((s) => s.slug),
+        isNew: true,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -79,6 +81,7 @@ export function CenterCard({ onSlugClick, onHighlightPosts, isCollapsed, onColla
         role: 'assistant',
         content:
           '죄송합니다. 응답을 생성하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        isNew: true,
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -193,15 +196,14 @@ export function CenterCard({ onSlugClick, onHighlightPosts, isCollapsed, onColla
         )}
 
         {/* Chat History - hide when collapsed */}
-        {!isCollapsed && (
-          <div
-            ref={scrollRef}
-            className="flex-1 px-8 overflow-y-auto"
-            style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: 'var(--neural-border-glow) transparent',
-            }}
-          >
+        <div
+          ref={scrollRef}
+          className={`flex-1 px-8 overflow-y-auto ${isCollapsed ? 'hidden' : ''}`}
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'var(--neural-border-glow) transparent',
+          }}
+        >
             {messages.length === 0 ? (
               <div className="h-full flex items-center justify-center">
                 <p
@@ -219,6 +221,7 @@ export function CenterCard({ onSlugClick, onHighlightPosts, isCollapsed, onColla
                   key={index}
                   role={message.role}
                   content={message.content}
+                  isNew={message.isNew === true}
                   relatedSlugs={message.relatedSlugs}
                   onSlugClick={onSlugClick}
                 />
@@ -242,7 +245,6 @@ export function CenterCard({ onSlugClick, onHighlightPosts, isCollapsed, onColla
               </div>
             )}
           </div>
-        )}
 
         {!isCollapsed && (
           <div

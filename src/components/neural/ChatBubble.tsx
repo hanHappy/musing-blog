@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 interface ChatBubbleProps {
   role: 'user' | 'assistant';
   content: string;
+  isNew?: boolean;
   relatedSlugs?: string[];
   onSlugClick?: (slug: string) => void;
 }
@@ -13,31 +14,31 @@ interface ChatBubbleProps {
 export function ChatBubble({
   role,
   content,
+  isNew = false,
   relatedSlugs,
   onSlugClick,
 }: ChatBubbleProps) {
-  const [displayedText, setDisplayedText] = useState('');
-  const [isTyping, setIsTyping] = useState(role === 'assistant');
+  const shouldAnimate = role === 'assistant' && isNew;
+  const [displayedText, setDisplayedText] = useState(shouldAnimate ? '' : content);
+  const [isTyping, setIsTyping] = useState(shouldAnimate);
 
   useEffect(() => {
-    if (role === 'assistant') {
-      setIsTyping(true);
-      let index = 0;
-      const interval = setInterval(() => {
-        setDisplayedText(content.slice(0, index));
-        index++;
+    if (!shouldAnimate) return;
 
-        if (index > content.length) {
-          clearInterval(interval);
-          setIsTyping(false);
-        }
-      }, 20);
+    let index = 0;
+    const interval = setInterval(() => {
+      setDisplayedText(content.slice(0, index));
+      index++;
 
-      return () => clearInterval(interval);
-    } else {
-      setDisplayedText(content);
-    }
-  }, [content, role]);
+      if (index > content.length) {
+        clearInterval(interval);
+        setIsTyping(false);
+      }
+    }, 20);
+
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <motion.div
