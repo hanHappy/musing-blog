@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Category, CategoryWithChildren } from '@/types/database';
 import TagSelector from '@/components/admin/TagSelector';
+import dynamic from 'next/dynamic';
+import type { MDEditorWithUploadRef } from '@/components/admin/editor/MDEditorWithUpload';
 
-// Dynamically import markdown editor to avoid SSR issues
-const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
+const MDEditorWithUpload = dynamic(
+  () => import('@/components/admin/editor/MDEditorWithUpload'),
+  { ssr: false }
+);
 
 export default function NewPostPage() {
   const router = useRouter();
@@ -20,6 +23,7 @@ export default function NewPostPage() {
   const [published, setPublished] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
+  const editorRef = useRef<MDEditorWithUploadRef>(null);
 
   useEffect(() => {
     // Fetch categories
@@ -55,13 +59,15 @@ export default function NewPostPage() {
     setLoading(true);
 
     try {
+      const finalContent = await (editorRef.current?.uploadPendingImages(content) ?? Promise.resolve(content));
+
       const res = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
           slug,
-          content,
+          content: finalContent,
           excerpt,
           category_id: categoryId || null,
           published,
@@ -178,12 +184,35 @@ export default function NewPostPage() {
             }}
           >
             <option value="">Uncategorized</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {'  '.repeat(cat.level - 1)}
-                {cat.name}
-              </option>
-            ))}
+            {categories
+              .filter((cat) => cat.level === 1)
+              .map((level1) => {
+                const children = categories.filter(
+                  (cat) => cat.parent_id === level1.id
+                );
+                const grandchildren = categories.filter((cat) =>
+                  children.some((c) => c.id === cat.parent_id)
+                );
+                return (
+                  <optgroup key={level1.id} label={level1.name}>
+                    <option value={level1.id}>{level1.name}</option>
+                    {children.map((level2) => (
+                      <>
+                        <option key={level2.id} value={level2.id}>
+                          {'\u2003'}{level2.name}
+                        </option>
+                        {grandchildren
+                          .filter((cat) => cat.parent_id === level2.id)
+                          .map((level3) => (
+                            <option key={level3.id} value={level3.id}>
+                              {'\u2003\u2003'}{level3.name}
+                            </option>
+                          ))}
+                      </>
+                    ))}
+                  </optgroup>
+                );
+              })}
           </select>
         </div>
 
@@ -227,13 +256,12 @@ export default function NewPostPage() {
           >
             Content (Markdown) *
           </label>
-          <div data-color-mode="light">
-            <MDEditor
-              value={content}
-              onChange={(val) => setContent(val || '')}
-              height={500}
-            />
-          </div>
+          <MDEditorWithUpload
+            ref={editorRef}
+            value={content}
+            onChange={setContent}
+            height={500}
+          />
         </div>
 
         {/* Published */}
@@ -282,7 +310,7 @@ export default function NewPostPage() {
 
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => { editorRef.current?.cleanup(); router.back(); }}
             className="px-6 py-3 rounded-lg font-medium transition-all"
             style={{
               color: 'var(--text-secondary)',

@@ -39,16 +39,10 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
   const { data: categoriesData } = await supabase
     .from('categories')
     .select('*')
+    .order('level', { ascending: true })
     .order('order', { ascending: true });
 
   const categories = categoriesData || [];
-
-  // 5. Flatten category tree
-  const flattenCategories = (cats: Category[]): Category[] => {
-    // For now, return as-is since we have a flat list
-    // In the future, this might need tree flattening logic
-    return cats;
-  };
 
   return (
     <div>
@@ -61,7 +55,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
 
       <EditPostForm
         post={post as PostWithCategoryAndTags}
-        categories={flattenCategories(categories)}
+        categories={categories}
       />
     </div>
   );

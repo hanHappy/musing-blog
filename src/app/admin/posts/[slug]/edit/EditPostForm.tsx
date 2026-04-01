@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import dynamic from 'next/dynamic';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Category, PostWithCategoryAndTags } from '@/types/database';
 import TagSelector from '@/components/admin/TagSelector';
+import dynamic from 'next/dynamic';
+import type { MDEditorWithUploadRef } from '@/components/admin/editor/MDEditorWithUpload';
 
-// Dynamically import markdown editor to avoid SSR issues
-const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
+const MDEditorWithUpload = dynamic(
+  () => import('@/components/admin/editor/MDEditorWithUpload'),
+  { ssr: false }
+);
 
 interface EditPostFormProps {
   post: PostWithCategoryAndTags;
@@ -16,6 +19,7 @@ interface EditPostFormProps {
 
 export function EditPostForm({ post, categories }: EditPostFormProps) {
   const router = useRouter();
+  const editorRef = useRef<MDEditorWithUploadRef>(null);
   const [title, setTitle] = useState(post.title);
   const [slug] = useState(post.slug);
   const [content, setContent] = useState(post.content);
@@ -32,13 +36,15 @@ export function EditPostForm({ post, categories }: EditPostFormProps) {
     setLoading(true);
 
     try {
+      const finalContent = await (editorRef.current?.uploadPendingImages(content) ?? Promise.resolve(content));
+
       const res = await fetch('/api/posts', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: post.id,
           title,
-          content,
+          content: finalContent,
           excerpt: excerpt || null,
           category_id: categoryId || null,
           published,
@@ -144,12 +150,35 @@ export function EditPostForm({ post, categories }: EditPostFormProps) {
           }}
         >
           <option value="">Uncategorized</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {'  '.repeat(cat.level - 1)}
-              {cat.name}
-            </option>
-          ))}
+          {categories
+            .filter((cat) => cat.level === 1)
+            .map((level1) => {
+              const children = categories.filter(
+                (cat) => cat.parent_id === level1.id
+              );
+              const grandchildren = categories.filter((cat) =>
+                children.some((c) => c.id === cat.parent_id)
+              );
+              return (
+                <optgroup key={level1.id} label={level1.name}>
+                  <option value={level1.id}>{level1.name}</option>
+                  {children.map((level2) => (
+                    <>
+                      <option key={level2.id} value={level2.id}>
+                        {'\u2003'}{level2.name}
+                      </option>
+                      {grandchildren
+                        .filter((cat) => cat.parent_id === level2.id)
+                        .map((level3) => (
+                          <option key={level3.id} value={level3.id}>
+                            {'\u2003\u2003'}{level3.name}
+                          </option>
+                        ))}
+                    </>
+                  ))}
+                </optgroup>
+              );
+            })}
         </select>
       </div>
 
@@ -193,13 +222,12 @@ export function EditPostForm({ post, categories }: EditPostFormProps) {
         >
           Content (Markdown) *
         </label>
-        <div data-color-mode="light">
-          <MDEditor
+          <MDEditorWithUpload
+            ref={editorRef}
             value={content}
-            onChange={(val) => setContent(val || '')}
+            onChange={setContent}
             height={500}
           />
-        </div>
       </div>
 
       {/* Published */}
@@ -248,7 +276,7 @@ export function EditPostForm({ post, categories }: EditPostFormProps) {
 
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => { editorRef.current?.cleanup(); router.back(); }}
           className="px-6 py-3 rounded-lg font-medium transition-all"
           style={{
             color: 'var(--text-secondary)',
