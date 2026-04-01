@@ -18,20 +18,24 @@ export default function MermaidDiagram({ chart }: MermaidDiagramProps) {
         const mermaid = (await import('mermaid')).default;
         mermaid.initialize({
           startOnLoad: false,
-          theme: 'dark',
+          theme: 'base',
+          wrap: true,
+          flowchart: { useMaxWidth: true, htmlLabels: true },
           themeVariables: {
-            primaryColor: '#00FFC8',
+            primaryColor: '#0a0e16',
             primaryTextColor: '#E2E8F0',
-            primaryBorderColor: '#00FFC840',
+            primaryBorderColor: '#00FFC8',
             lineColor: '#A78BFA',
-            secondaryColor: '#1a1f2e',
-            tertiaryColor: '#0d1117',
+            secondaryColor: '#0a0e16',
+            tertiaryColor: '#0a0e16',
             background: '#080B10',
-            mainBkg: '#0d1117',
-            nodeBorder: '#00FFC840',
-            clusterBkg: '#1a1f2e',
-            titleColor: '#E2E8F0',
-            edgeLabelBackground: '#1a1f2e',
+            mainBkg: '#0a0e16',
+            nodeBorder: '#00FFC8',
+            clusterBkg: 'rgba(0,255,200,0.03)',
+            titleColor: '#6B7280',
+            edgeLabelBackground: '#0a0e16',
+            fontFamily: 'IBM Plex Mono, monospace',
+            fontSize: '13px',
           },
         });
 
@@ -50,36 +54,8 @@ export default function MermaidDiagram({ chart }: MermaidDiagramProps) {
   }, [chart]);
 
   if (error) {
-    return (
-      <pre
-        style={{
-          color: '#F87171',
-          background: 'rgba(248, 113, 113, 0.1)',
-          border: '1px solid rgba(248, 113, 113, 0.3)',
-          borderRadius: '8px',
-          padding: '1rem',
-          fontSize: '12px',
-          whiteSpace: 'pre-wrap',
-        }}
-      >
-        {error}
-      </pre>
-    );
+    return <pre className="mermaid-error">{error}</pre>;
   }
 
-  return (
-    <div
-      ref={ref}
-      style={{
-        background: 'rgba(13, 17, 23, 0.8)',
-        border: '1px solid #00FFC820',
-        borderRadius: '12px',
-        padding: '1.5rem',
-        margin: '1.5rem 0',
-        display: 'flex',
-        justifyContent: 'center',
-        overflowX: 'auto',
-      }}
-    />
-  );
+  return <div ref={ref} className="mermaid-container" />;
 }
