@@ -9,8 +9,11 @@ import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
+import dynamic from 'next/dynamic';
 import TableOfContents from '@/components/TableOfContents';
 import AdminToolbar from '@/components/AdminToolbar';
+
+const MermaidDiagram = dynamic(() => import('@/components/MermaidDiagram'), { ssr: false });
 
 interface PostTag {
   id: string;
@@ -131,6 +134,18 @@ export default function PostDetailView({
 
   const CodeBlock = useCallback(({ children, ...props }: React.HTMLAttributes<HTMLPreElement>) => {
     const [copied, setCopied] = useState(false);
+
+    // mermaid 블록 감지: <pre><code class="language-mermaid">...</code></pre>
+    const child = Array.isArray(children) ? children[0] : children;
+    if (
+      child &&
+      typeof child === 'object' &&
+      'props' in child &&
+      (child as React.ReactElement<{ className?: string; children?: ReactNode }>).props.className?.includes('language-mermaid')
+    ) {
+      const chart = extractText((child as React.ReactElement<{ children?: ReactNode }>).props.children);
+      return <MermaidDiagram chart={chart} />;
+    }
 
     const handleCopy = () => {
       const code = extractText(children as ReactNode);
