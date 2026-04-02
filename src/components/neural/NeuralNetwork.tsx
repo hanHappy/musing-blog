@@ -450,7 +450,7 @@ export function NeuralNetwork({
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse at center, transparent 0%, rgba(8, 11, 16, 0.7) 70%, rgba(8, 11, 16, 0.95) 100%)',
+            'radial-gradient(ellipse at center, transparent 0%, rgba(8, 11, 16, 0.82) 65%, rgba(8, 11, 16, 0.98) 100%)',
         }}
       />
     </div>
