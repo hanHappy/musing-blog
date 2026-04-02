@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Github, Rss, User, Minimize2 } from 'lucide-react';
+import { Send, Github, User, Minimize2 } from 'lucide-react';
+import Link from 'next/link';
 import { ChatBubble } from './ChatBubble';
 import type { ChatResponse } from '@/types/database';
 
@@ -163,22 +164,14 @@ export function CenterCard({ onSlugClick, onHighlightPosts, isCollapsed, onColla
                 <Github size={16} />
                 <span>GitHub</span>
               </a>
-              <a
-                href="#about"
+              <Link
+                href="/about"
                 className="flex items-center gap-1.5 text-sm hover:text-[var(--neural-accent)] transition-colors"
                 style={{ color: 'var(--neural-text-muted)' }}
               >
                 <User size={16} />
                 <span>About</span>
-              </a>
-              <a
-                href="#rss"
-                className="flex items-center gap-1.5 text-sm hover:text-[var(--neural-accent)] transition-colors"
-                style={{ color: 'var(--neural-text-muted)' }}
-              >
-                <Rss size={16} />
-                <span>RSS</span>
-              </a>
+              </Link>
             </div>
           </div>
         )}

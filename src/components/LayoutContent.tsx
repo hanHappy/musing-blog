@@ -17,6 +17,7 @@ export default function LayoutContent({
     pathname === '/' ||
     pathname?.startsWith('/login') ||
     pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/about') ||
     pathname?.startsWith('/posts/') ||
     pathname?.startsWith('/category/') ||
     pathname?.startsWith('/tags/');

@@ -12,6 +12,7 @@ import 'highlight.js/styles/github-dark.css';
 import dynamic from 'next/dynamic';
 import TableOfContents from '@/components/TableOfContents';
 import AdminToolbar from '@/components/AdminToolbar';
+import NeuralFooter from '@/components/NeuralFooter';
 
 const MermaidDiagram = dynamic(() => import('@/components/MermaidDiagram'), { ssr: false });
 
@@ -293,7 +294,7 @@ export default function PostDetailView({
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="absolute inset-0 overflow-y-auto pt-32 pb-32"
+        className="absolute inset-0 overflow-y-auto pt-32"
         style={{
           scrollbarWidth: 'thin',
           scrollbarColor: 'var(--neural-border-glow) transparent',
@@ -572,6 +573,7 @@ export default function PostDetailView({
             </motion.div>
           )}
         </div>
+        <NeuralFooter />
       </motion.div>
 
       {/* Table of Contents (right side) */}
