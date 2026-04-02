@@ -154,6 +154,14 @@ export function CenterCard({ onSlugClick, onHighlightPosts, isCollapsed, onColla
 
             {/* Links */}
             <div className="flex gap-4">
+              <Link
+                href="/about"
+                className="flex items-center gap-1.5 text-sm hover:text-[var(--neural-accent)] transition-colors"
+                style={{ color: 'var(--neural-text-muted)' }}
+              >
+                <User size={16} />
+                <span>About</span>
+              </Link>
               <a
                 href="https://github.com/hanHappy"
                 target="_blank"
@@ -164,14 +172,6 @@ export function CenterCard({ onSlugClick, onHighlightPosts, isCollapsed, onColla
                 <Github size={16} />
                 <span>GitHub</span>
               </a>
-              <Link
-                href="/about"
-                className="flex items-center gap-1.5 text-sm hover:text-[var(--neural-accent)] transition-colors"
-                style={{ color: 'var(--neural-text-muted)' }}
-              >
-                <User size={16} />
-                <span>About</span>
-              </Link>
             </div>
           </div>
         )}
@@ -261,7 +261,7 @@ export function CenterCard({ onSlugClick, onHighlightPosts, isCollapsed, onColla
               onFocus={handleInputFocus}
               placeholder="무엇이든 물어보세요..."
               disabled={isProcessing}
-              className="w-full px-4 py-3 pr-12 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] focus:border-[var(--neural-accent)] focus:outline-none transition-colors"
+              className="w-full px-4 py-3 pr-12 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] focus:outline-none transition-colors"
               style={{
                 color: 'var(--neural-text-primary)',
                 fontSize: '14px',

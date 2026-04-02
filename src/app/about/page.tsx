@@ -126,16 +126,6 @@ export default function AboutPage() {
             </p>
           </section>
 
-          {/* Divider */}
-          <div
-            className="mb-12"
-            style={{
-              height: '1px',
-              background: 'linear-gradient(90deg, transparent, var(--neural-border-glow), transparent)',
-              opacity: 0.3,
-            }}
-          />
-
           {/* Skills */}
           <section className="mb-12">
             <h2

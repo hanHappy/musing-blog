@@ -5,6 +5,19 @@ import { revalidatePath } from 'next/cache';
 import type { CreatePostRequest, UpdatePostRequest } from '@/types/database';
 import { generateChunkEmbeddings } from '@/lib/rag/embeddings';
 
+const STORAGE_MARKER = '/storage/v1/object/public/blog-images/';
+
+function extractStoragePaths(content: string): string[] {
+  const pattern = /!\[.*?\]\((https?:\/\/[^)]+)\)/g;
+  return [...content.matchAll(pattern)]
+    .map((m) => m[1])
+    .map((url) => {
+      const idx = url.indexOf(STORAGE_MARKER);
+      return idx !== -1 ? url.slice(idx + STORAGE_MARKER.length) : null;
+    })
+    .filter((p): p is string => p !== null);
+}
+
 // GET /api/posts - Get all posts (public: only published, admin: all)
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -147,7 +160,18 @@ export async function PATCH(request: Request) {
     );
   }
 
-  // 4. Update post
+  // 4. Fetch old content before update (for image diff)
+  let oldContent: string | null = null;
+  if (updates.content) {
+    const { data: oldPost } = await supabase
+      .from('posts')
+      .select('content')
+      .eq('id', id)
+      .single();
+    oldContent = oldPost?.content ?? null;
+  }
+
+  // 5. Update post
   const { data, error } = await supabase
     .from('posts')
     .update(updates)
@@ -178,7 +202,22 @@ export async function PATCH(request: Request) {
     }
   }
 
-  // 6. Regenerate chunk embeddings if content changed and post is published
+  // 6. Delete removed images from Storage
+  if (updates.content && oldContent) {
+    const oldPaths = extractStoragePaths(oldContent);
+    const newPaths = new Set(extractStoragePaths(updates.content));
+    const removed = oldPaths.filter((p) => !newPaths.has(p));
+    if (removed.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from('blog-images')
+        .remove(removed);
+      if (storageError) {
+        console.error('Failed to delete removed images:', storageError);
+      }
+    }
+  }
+
+  // 7. Regenerate chunk embeddings if content changed and post is published
   if ((updates.content || updates.title) && data.published) {
     try {
       await generateChunkEmbeddings(data.id, data.title, data.content, data.excerpt);
@@ -222,15 +261,31 @@ export async function DELETE(request: Request) {
 
   const supabase = await createClient();
 
-  // 3. Delete by id or slug
-  const deleteQuery = id
-    ? supabase.from('posts').delete().eq('id', id)
-    : supabase.from('posts').delete().eq('slug', slug);
+  // 3. Fetch post content before deletion to extract image URLs
+  const { data: post } = await (id
+    ? supabase.from('posts').select('content').eq('id', id).single()
+    : supabase.from('posts').select('content').eq('slug', slug!).single());
 
-  const { error } = await deleteQuery;
+  // 4. Delete post
+  const { error } = await (id
+    ? supabase.from('posts').delete().eq('id', id)
+    : supabase.from('posts').delete().eq('slug', slug!));
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // 5. Delete referenced images from Storage
+  if (post?.content) {
+    const storagePaths = extractStoragePaths(post.content);
+    if (storagePaths.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from('blog-images')
+        .remove(storagePaths);
+      if (storageError) {
+        console.error('Failed to delete post images:', storageError);
+      }
+    }
   }
 
   return NextResponse.json({ success: true });
