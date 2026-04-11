@@ -1,3 +1,6 @@
+# IDE
+.idea
+
 # dependencies
 /node_modules
 /.pnp
@@ -33,6 +36,12 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# oh-my-claudecode local runtime data
+.omc/
+
+# supabase local temp files
+supabase/.temp/
 
 # typescript
 *.tsbuildinfo

@@ -45,7 +45,7 @@ A modern, cost-optimized blog platform built with Next.js, featuring:
 ## 📦 Project Structure
 
 ```
-musing-blog/
+muse-log/
 ├── src/
 │   ├── app/
 │   │   ├── admin/              # Admin panel pages
@@ -117,7 +117,7 @@ musing-blog/
 ```bash
 # Clone repository
 git clone <your-repo-url>
-cd musing-blog
+cd muse-log
 
 # Install dependencies
 npm install
