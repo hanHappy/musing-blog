@@ -22,7 +22,7 @@ export default function NeuralFooter() {
             <Github size={16} />
           </a>
           <a
-            href="mailto:hansmin95@gmail.com"
+            href="mailto:kkinehz@gmail.com"
             className="transition-colors hover:text-[var(--neural-accent)]"
             style={{ color: 'var(--neural-text-muted)' }}
             aria-label="Email"
