@@ -30,7 +30,8 @@ export default function CategoriesPage() {
   const allFlat = useMemo(() => flattenCategories(categories), [categories]);
 
   const fetchCategories = useCallback(async () => {
-    const res = await fetch('/api/categories');
+    // The GET is edge-cached for 24h; the admin list must always read fresh.
+    const res = await fetch('/api/categories', { cache: 'no-store' });
     const data = await res.json();
     setCategories(data);
   }, []);
@@ -73,25 +74,27 @@ export default function CategoriesPage() {
       level: 1 | 2 | 3;
     }) => {
       try {
-        if (editingCategory) {
-          const res = await fetch('/api/categories', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: editingCategory.id, ...data }),
-          });
-          if (!res.ok) throw new Error('Failed to update category');
-        } else {
-          const res = await fetch('/api/categories', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-          });
-          if (!res.ok) throw new Error('Failed to create category');
+        const res = await fetch('/api/categories', {
+          method: editingCategory ? 'PATCH' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            editingCategory ? { id: editingCategory.id, ...data } : data
+          ),
+        });
+        if (!res.ok) {
+          // Surface the server's reason instead of a generic message.
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.error ?? `Request failed (${res.status})`);
         }
         await fetchCategories();
       } catch (error) {
         console.error(error);
-        alert(editingCategory ? 'Failed to update category' : 'Failed to create category');
+        const action = editingCategory ? 'update' : 'create';
+        alert(
+          `Failed to ${action} category: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`
+        );
       }
     },
     [editingCategory, fetchCategories]

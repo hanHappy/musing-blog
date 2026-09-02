@@ -1,6 +1,8 @@
 // API route for categories CRUD operations
 import { createClient, isAdmin } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
+import { generateSlug } from '@/lib/slug';
+import { revalidateCategories } from '@/lib/cache-tags';
 import type {
   Category,
   CategoryWithChildren,
@@ -27,6 +29,7 @@ export async function GET() {
 
   return NextResponse.json(tree, {
     headers: {
+      // Long-lived edge cache, purged explicitly by revalidateCategories().
       'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
     },
   });
@@ -43,11 +46,22 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const body: CreateCategoryRequest = await request.json();
 
+  // A name written only in Korean used to slugify to an empty string, which
+  // then failed the NOT NULL / UNIQUE constraint on slug with an opaque 500.
+  const slug = generateSlug(body.slug || body.name || '');
+
+  if (!slug) {
+    return NextResponse.json(
+      { error: 'Could not derive a slug from the given name. Enter one manually.' },
+      { status: 400 }
+    );
+  }
+
   const { data, error } = await supabase
     .from('categories')
     .insert({
       name: body.name,
-      slug: body.slug,
+      slug,
       parent_id: body.parent_id || null,
       level: body.level,
       order: body.order || 0,
@@ -57,8 +71,17 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
+    // 23505 = unique_violation (duplicate slug)
+    if (error.code === '23505') {
+      return NextResponse.json(
+        { error: `Slug "${slug}" is already in use.` },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  revalidateCategories();
 
   return NextResponse.json(data, { status: 201 });
 }
@@ -94,6 +117,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  revalidateCategories();
+
   return NextResponse.json(data);
 }
 
@@ -122,6 +147,8 @@ export async function DELETE(request: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  revalidateCategories();
 
   return NextResponse.json({ success: true });
 }

@@ -1,5 +1,6 @@
 import { createClient, isAdmin } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
+import { revalidateCategories } from '@/lib/cache-tags';
 interface BulkCategoryOrderUpdate {
   updates: { id: string; parent_id: string | null; level: number; order: number }[];
 }
@@ -31,6 +32,8 @@ export async function PUT(request: Request) {
           .eq('id', update.id)
       )
     );
+
+    revalidateCategories();
 
     return NextResponse.json({ success: true });
   } catch (error) {
