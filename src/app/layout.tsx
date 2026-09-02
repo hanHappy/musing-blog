@@ -36,14 +36,15 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
+      className={`dark ${inter.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
       suppressHydrationWarning
     >
       <body className="min-h-screen">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          forcedTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange={false}
         >
           <LayoutContent>{children}</LayoutContent>
