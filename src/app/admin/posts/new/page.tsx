@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { generateSlug } from '@/lib/slug';
 import { useRouter } from 'next/navigation';
 import type { Category, CategoryWithChildren } from '@/types/database';
 import TagSelector from '@/components/admin/TagSelector';
@@ -44,13 +45,7 @@ export default function NewPostPage() {
   // Auto-generate slug from title
   useEffect(() => {
     if (title) {
-      const generatedSlug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim();
-      setSlug(generatedSlug);
+      setSlug(generateSlug(title));
     }
   }, [title]);
 

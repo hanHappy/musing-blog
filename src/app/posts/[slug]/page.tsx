@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { decodeSlug, isValidSlug } from '@/lib/slug';
 import type { Metadata } from 'next';
 import { createBrowserClient } from '@supabase/ssr';
 import { createClient, isAdmin } from '@/lib/supabase-server';
@@ -34,10 +35,11 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  // Route params arrive percent-encoded; decode before validating/querying.
+  const slug = decodeSlug(rawSlug);
 
-  const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-  if (!slugPattern.test(slug)) {
+  if (!isValidSlug(slug)) {
     return { title: 'Not Found' };
   }
 
@@ -74,10 +76,11 @@ export async function generateMetadata({
 
 // 게시글 페이지
 export default async function PostPage({ params }: PageProps) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  // Route params arrive percent-encoded; decode before validating/querying.
+  const slug = decodeSlug(rawSlug);
 
-  const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-  if (!slugPattern.test(slug)) {
+  if (!isValidSlug(slug)) {
     notFound();
   }
 

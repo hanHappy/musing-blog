@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Category } from '@/types/database';
+import { generateSlug } from '@/lib/slug';
 
 interface CategoryFormProps {
   initialData?: {
@@ -39,13 +40,7 @@ export default function CategoryForm({
   // Auto-generate slug from name
   useEffect(() => {
     if (!slugManuallyEdited && name) {
-      const generated = name
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim();
-      setSlug(generated);
+      setSlug(generateSlug(name));
     }
   }, [name, slugManuallyEdited]);
 

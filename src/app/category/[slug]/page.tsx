@@ -5,6 +5,7 @@
  */
 
 import { notFound } from 'next/navigation';
+import { decodeSlug, isValidSlug } from '@/lib/slug';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
@@ -43,7 +44,8 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const supabase = await createClient();
 
   const { data: category } = await supabase
@@ -59,10 +61,11 @@ export async function generateMetadata({
 }
 
 export default async function CategoryPage({ params }: PageProps) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  // Route params arrive percent-encoded; decode before validating/querying.
+  const slug = decodeSlug(rawSlug);
 
-  const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-  if (!slugPattern.test(slug)) {
+  if (!isValidSlug(slug)) {
     notFound();
   }
 
