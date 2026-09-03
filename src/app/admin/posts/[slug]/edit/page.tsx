@@ -1,5 +1,6 @@
 import { redirect, notFound } from 'next/navigation';
 import { createClient, isAdmin } from '@/lib/supabase-server';
+import { decodeSlug } from '@/lib/slug';
 import { EditPostForm } from './EditPostForm';
 import type { Category, PostWithCategoryAndTags } from '@/types/database';
 
@@ -16,8 +17,9 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
     redirect('/login');
   }
 
-  // 2. Unwrap params
-  const { slug } = await params;
+  // 2. Unwrap params (route params arrive percent-encoded)
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
 
   // 3. Fetch post by slug
   const supabase = await createClient();

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { decodeSlug } from '@/lib/slug';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
@@ -25,7 +26,8 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const supabase = await createClient();
 
   const { data: tag } = await supabase
@@ -43,7 +45,8 @@ export async function generateMetadata({
 }
 
 export default async function TagPage({ params }: PageProps) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const supabase = await createClient();
 
   // Fetch tag
